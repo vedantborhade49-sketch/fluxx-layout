@@ -1,7 +1,6 @@
 import React from 'react';
 import { FadeIn } from '../FadeIn';
 import { Magnet } from '../Magnet';
-import { ContactButton } from '../ContactButton';
 
 export const HeroSection: React.FC = () => {
   return (
@@ -44,22 +43,18 @@ export const HeroSection: React.FC = () => {
             />
           </Magnet>
         </FadeIn>
-
-        <FadeIn delay={0.5} y={20} className="mt-2 sm:mt-4 z-20">
-          <ContactButton />
-        </FadeIn>
       </div>
 
       {/* Bottom Scrolling Marquee */}
-      <div className="w-full border-y-2 border-[#FF0000]/40 py-4 sm:py-5 overflow-hidden relative z-20 bg-[#1A0000] backdrop-blur-md shrink-0">
+      <div className="w-full border-y-2 border-[#FF0000]/40 py-5 sm:py-6 overflow-hidden relative z-20 bg-[#1A0000] backdrop-blur-md shrink-0 mt-4 sm:mt-6">
         <FadeIn delay={0.35} y={20}>
           <div className="animate-marquee-scroll whitespace-nowrap">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center">
-                <p className="text-[#FF0000] font-bold uppercase tracking-widest text-sm sm:text-base md:text-lg lg:text-xl px-6 drop-shadow-md">
+                <p className="text-[#FF0000] font-bold uppercase tracking-widest text-lg sm:text-xl md:text-2xl lg:text-3xl px-8 drop-shadow-md">
                   Transforming city-wide environmental monitoring through autonomous VTOL missions, intelligent sensor data collection, and AI-powered environmental insights.
                 </p>
-                <span className="mx-10 text-[#FF0000]/50 text-xl">•</span>
+                <span className="mx-12 text-[#FF0000]/50 text-2xl lg:text-3xl">•</span>
               </div>
             ))}
           </div>

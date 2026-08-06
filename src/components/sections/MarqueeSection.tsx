@@ -2,35 +2,27 @@ import React, { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 const images = [
-  "https://motionsites.ai/assets/hero-space-voyage-preview-eECLH3Yc.gif",
-  "https://motionsites.ai/assets/hero-codenest-preview-Cgppc2qV.gif",
-  "https://motionsites.ai/assets/hero-vex-ventures-preview-BczMFIiw.gif",
-  "https://motionsites.ai/assets/hero-stellar-ai-v2-preview-DjvxjG3C.gif",
-  "https://motionsites.ai/assets/hero-asme-preview-B_nGDnTP.gif",
-  "https://motionsites.ai/assets/hero-transform-data-preview-Cx5OU29N.gif",
-  "https://motionsites.ai/assets/hero-vitara-preview-Cjz2QYyU.gif",
-  "https://motionsites.ai/assets/hero-terra-preview-BFjrCr7T.gif",
-  "https://motionsites.ai/assets/hero-skyelite-preview-DHaZIgUv.gif",
-  "https://motionsites.ai/assets/hero-aethera-preview-DknSlcTa.gif",
-  "https://motionsites.ai/assets/hero-designpro-preview-D8c5_een.gif",
-  "https://motionsites.ai/assets/hero-stellar-ai-preview-D3HL6bw1.gif",
-  "https://motionsites.ai/assets/hero-xportfolio-preview-D4A8maiC.gif",
-  "https://motionsites.ai/assets/hero-orbit-web3-preview-BXt4OttD.gif",
-  "https://motionsites.ai/assets/hero-nexora-preview-cx5HmUgo.gif",
-  "https://motionsites.ai/assets/hero-evr-ventures-preview-DZxeVFEX.gif",
-  "https://motionsites.ai/assets/hero-planet-orbit-preview-DWAP8Z1P.gif",
-  "https://motionsites.ai/assets/hero-new-era-preview-CocuDUm9.gif",
-  "https://motionsites.ai/assets/hero-wealth-preview-B70idl_u.gif",
-  "https://motionsites.ai/assets/hero-luminex-preview-CxOP7ce6.gif",
-  "https://motionsites.ai/assets/hero-celestia-preview-0yO3jXO8.gif"
+  "/d1.png",
+  "/d2.png",
+  "/d3.png",
+  "/d4.png",
+  "/d5.png"
 ];
 
-const row1 = images.slice(0, 11);
-const row2 = images.slice(11);
+// Create a distinctly different order for the second row so they don't match up
+const row1 = [...images];
+const row2 = [
+  "/d3.png",
+  "/d5.png",
+  "/d2.png",
+  "/d4.png",
+  "/d1.png"
+];
 
-// Triple the arrays for seamless scrolling
-const renderRow1 = [...row1, ...row1, ...row1];
-const renderRow2 = [...row2, ...row2, ...row2];
+// Multiply the arrays to ensure seamless scrolling across ultra-wide monitors
+// Using 10x multiplication so they never run out
+const renderRow1 = Array(10).fill(row1).flat();
+const renderRow2 = Array(10).fill(row2).flat();
 
 export const MarqueeSection: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,44 +32,51 @@ export const MarqueeSection: React.FC = () => {
     offset: ['start end', 'end start']
   });
 
-  // Calculate scroll offset as specified: (scrollY - sectionTop + windowHeight) * 0.3
-  // Since useScroll gives 0 to 1 based on intersection, we map it to px values.
-  // Instead of manual offset calculation, we can just map the progress 0-1 to a wide pixel range.
-  // For a smooth effect, mapping 0 to 1 -> -500 to 500 (adjust as needed).
-  const x1 = useTransform(scrollYProgress, [0, 1], [-200, 800]); // Moves RIGHT
-  const x2 = useTransform(scrollYProgress, [0, 1], [200, -800]); // Moves LEFT
+  // By starting at -3000px, the row has thousands of pixels of images off-screen to the left.
+  // As the user scrolls down, x1 increases (moving right), revealing the off-screen left images.
+  // x2 decreases (moving left), revealing the off-screen right images.
+  const x1 = useTransform(scrollYProgress, [0, 1], [-3000, -1500]); // Moves RIGHT
+  const x2 = useTransform(scrollYProgress, [0, 1], [-1500, -3000]); // Moves LEFT
 
   return (
-    <section ref={containerRef} className="bg-[#0C0C0C] pt-24 sm:pt-32 md:pt-40 pb-10 overflow-hidden flex flex-col gap-3">
+    <section ref={containerRef} className="bg-[#050505] pt-24 sm:pt-32 md:pt-40 pb-10 overflow-hidden flex flex-col gap-4 relative">
+      {/* Subtle Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[50%] bg-[#00D0FF]/5 blur-[120px] rounded-full pointer-events-none"></div>
+
       {/* Row 1 */}
       <motion.div 
-        className="flex gap-3 w-max"
+        className="flex gap-4 w-max"
         style={{ x: x1, willChange: 'transform' }}
       >
         {renderRow1.map((src, i) => (
-          <img 
-            key={`r1-${i}`} 
-            src={src} 
-            alt="Work preview" 
-            className="w-[420px] h-[270px] rounded-2xl object-cover shrink-0" 
-            loading="lazy" 
-          />
+          <div key={`r1-${i}`} className="relative group shrink-0 overflow-hidden rounded-2xl border border-white/5 bg-[#111]">
+            <img 
+              src={src} 
+              alt="Mission preview" 
+              className="w-[300px] h-[200px] sm:w-[380px] sm:h-[240px] md:w-[460px] md:h-[280px] object-cover shrink-0 brightness-110 group-hover:brightness-125 group-hover:scale-105 transition-all duration-500" 
+              loading="lazy" 
+            />
+            {/* Subtle Overlay to match dark theme */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/60 to-transparent pointer-events-none"></div>
+          </div>
         ))}
       </motion.div>
       
       {/* Row 2 */}
       <motion.div 
-        className="flex gap-3 w-max"
+        className="flex gap-4 w-max"
         style={{ x: x2, willChange: 'transform' }}
       >
         {renderRow2.map((src, i) => (
-          <img 
-            key={`r2-${i}`} 
-            src={src} 
-            alt="Work preview" 
-            className="w-[420px] h-[270px] rounded-2xl object-cover shrink-0" 
-            loading="lazy" 
-          />
+          <div key={`r2-${i}`} className="relative group shrink-0 overflow-hidden rounded-2xl border border-white/5 bg-[#111]">
+            <img 
+              src={src} 
+              alt="Mission preview" 
+              className="w-[300px] h-[200px] sm:w-[380px] sm:h-[240px] md:w-[460px] md:h-[280px] object-cover shrink-0 brightness-110 group-hover:brightness-125 group-hover:scale-105 transition-all duration-500" 
+              loading="lazy" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/60 to-transparent pointer-events-none"></div>
+          </div>
         ))}
       </motion.div>
     </section>
