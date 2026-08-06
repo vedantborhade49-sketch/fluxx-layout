@@ -4,18 +4,27 @@ import { Magnet } from '../Magnet';
 import { ContactButton } from '../ContactButton';
 
 export const HeroSection: React.FC = () => {
+  const navItems = [
+    { label: 'Overview', href: '#overview' },
+    { label: 'Technology', href: '#technology' },
+    { label: 'Contact', href: '#contact' },
+    { label: 'Login', href: '/login.html', target: '_blank' as const },
+  ];
+
   return (
     <section className="h-screen flex flex-col overflow-x-clip relative">
       {/* Navbar */}
       <FadeIn delay={0} y={-20} className="w-full">
         <nav className="flex justify-between items-center px-6 md:px-10 pt-6 md:pt-8">
-          {["Overview", "Technology", "Contact"].map((item) => (
+          {navItems.map((item) => (
             <a
-              key={item}
-              href={`#${item.toLowerCase().replace(/\s+/g, '-')}`}
+              key={item.label}
+              href={item.href}
+              target={item.target}
+              rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
               className="text-[#D7E2EA] font-medium uppercase tracking-wider text-sm md:text-lg lg:text-[1.4rem] hover:opacity-70 transition-opacity duration-200"
             >
-              {item}
+              {item.label}
             </a>
           ))}
         </nav>
