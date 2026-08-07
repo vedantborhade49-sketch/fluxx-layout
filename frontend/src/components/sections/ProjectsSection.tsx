@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { LiveProjectButton } from '../LiveProjectButton';
 import { FadeIn } from '../FadeIn';
 
@@ -40,24 +40,38 @@ interface ProjectCardProps {
   project: typeof projects[0];
   index: number;
   totalCards: number;
+  progress: any;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, totalCards }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, totalCards, progress }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   
-  // Calculate target scale for sticking cards behind each other
-  const targetScale = 1 - (totalCards - 1 - index) * 0.03;
+  // The scroll range where this specific card starts being covered by the next card
+  const targetScale = 1 - (totalCards - index) * 0.05;
+  const range = [index * 0.25, 1];
+  
+  // Apply scrolling transforms for the flip/stack effect
+  const scale = useTransform(progress, range, [1, targetScale]);
+  // Add a vertical flip rotation when the card gets covered
+  const rotateX = useTransform(progress, range, [0, -15]);
+  // Fade it out slightly
+  const opacity = useTransform(progress, range, [1, 0.4]);
+  // Push it up slightly while flipping
+  const y = useTransform(progress, range, [0, -30]);
   
   return (
     <div 
-      className="sticky top-24 md:top-32 h-[85vh] w-full flex items-center justify-center"
-      style={{ top: `${96 + index * 28}px` }}
+      className="sticky top-24 md:top-32 h-[85vh] w-full flex items-center justify-center perspective-[1000px]"
+      style={{ top: `${96 + index * 20}px` }}
     >
       <motion.div 
         ref={cardRef}
-        className="w-full max-w-7xl mx-auto rounded-[40px] sm:rounded-[50px] md:rounded-[60px] border-2 border-[#D7E2EA] bg-[#0C0C0C] p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-6 md:gap-8 origin-top"
+        className="w-full max-w-7xl mx-auto rounded-[40px] sm:rounded-[50px] md:rounded-[60px] border-2 border-[#D7E2EA] bg-[#0C0C0C] p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-6 md:gap-8 origin-top shadow-2xl"
         style={{
-          scale: targetScale
+          scale,
+          rotateX,
+          opacity,
+          y
         }}
       >
         {/* Top Row */}
@@ -109,8 +123,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, totalCards })
 }
 
 export const ProjectsSection: React.FC = () => {
+  const containerRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
+
   return (
     <section 
+      ref={containerRef}
       id="projects" 
       className="bg-[#0C0C0C] rounded-t-[40px] sm:rounded-t-[50px] md:rounded-t-[60px] -mt-10 sm:-mt-12 md:-mt-14 z-30 relative px-5 sm:px-8 md:px-10 py-20 sm:py-24 md:py-32"
     >
@@ -120,13 +141,14 @@ export const ProjectsSection: React.FC = () => {
         </h2>
       </FadeIn>
 
-      <div className="relative pb-[20vh]">
+      <div className="relative pb-[50vh]">
         {projects.map((project, i) => (
           <ProjectCard 
             key={project.num} 
             project={project} 
             index={i} 
             totalCards={projects.length} 
+            progress={scrollYProgress}
           />
         ))}
       </div>
