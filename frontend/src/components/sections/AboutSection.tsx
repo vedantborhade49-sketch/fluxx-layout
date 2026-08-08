@@ -2,7 +2,11 @@ import React from 'react';
 import { FadeIn } from '../FadeIn';
 import { AnimatedText } from '../AnimatedText';
 
-export const AboutSection: React.FC = () => {
+interface AboutSectionProps {
+  onLaunchPlatform?: () => void;
+}
+
+export const AboutSection: React.FC<AboutSectionProps> = ({ onLaunchPlatform }) => {
   return (
     <section id="technology" className="min-h-screen relative flex flex-col items-center justify-center px-5 sm:px-8 md:px-10 py-20 overflow-hidden bg-[#050505]">
       
@@ -19,9 +23,12 @@ export const AboutSection: React.FC = () => {
         </div>
 
         <FadeIn delay={0.4} y={20}>
-          <a href="#applications" className="px-8 py-4 border border-white/20 text-white font-semibold rounded-full hover:bg-white hover:text-black transition-colors duration-300">
-            Explore Capabilities
-          </a>
+          <button 
+            onClick={onLaunchPlatform}
+            className="px-8 py-4 border border-white/20 text-white font-semibold rounded-full hover:bg-[#00F0FF] hover:text-black hover:border-[#00F0FF] transition-all duration-300 shadow-[0_0_20px_rgba(0,240,255,0.2)]"
+          >
+            Launch Intelligence Platform →
+          </button>
         </FadeIn>
       </div>
     </section>

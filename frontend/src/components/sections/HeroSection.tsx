@@ -3,28 +3,41 @@ import { FadeIn } from '../FadeIn';
 import { Magnet } from '../Magnet';
 import { ContactButton } from '../ContactButton';
 
-export const HeroSection: React.FC = () => {
+interface HeroSectionProps {
+  onLaunchPlatform?: () => void;
+}
+
+export const HeroSection: React.FC<HeroSectionProps> = ({ onLaunchPlatform }) => {
   return (
     <section className="h-screen flex flex-col overflow-x-clip relative">
       {/* Navbar */}
       <FadeIn delay={0} y={-20} className="w-full shrink-0">
         <nav className="flex justify-between items-center px-6 md:px-10 pt-6 md:pt-8">
-          {[
-            { label: 'Overview', href: '#overview' },
-            { label: 'Technology', href: '#technology' },
-            { label: 'Contact', href: '#contact' },
-            { label: 'Login', href: '/login.html', target: '_blank' },
-          ].map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              target={item.target}
-              rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
-              className="text-[#D7E2EA] font-medium uppercase tracking-wider text-sm md:text-lg lg:text-[1.4rem] hover:opacity-70 transition-opacity duration-200"
-            >
-              {item.label}
-            </a>
-          ))}
+          <a
+            href="#overview"
+            className="text-[#D7E2EA] font-medium uppercase tracking-wider text-sm md:text-lg lg:text-[1.4rem] hover:opacity-70 transition-opacity duration-200"
+          >
+            Overview
+          </a>
+          <a
+            href="#technology"
+            className="text-[#D7E2EA] font-medium uppercase tracking-wider text-sm md:text-lg lg:text-[1.4rem] hover:opacity-70 transition-opacity duration-200"
+          >
+            Technology
+          </a>
+          <button
+            onClick={onLaunchPlatform}
+            className="text-[#00F0FF] border border-[#00F0FF]/40 bg-[#00F0FF]/10 px-4 py-1.5 rounded-full font-bold uppercase tracking-wider text-xs md:text-sm lg:text-base hover:bg-[#00F0FF]/25 hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] transition-all duration-200 flex items-center gap-1.5"
+          >
+            <span className="w-2 h-2 rounded-full bg-[#00FF9D] animate-pulse" />
+            <span>Live Platform</span>
+          </button>
+          <a
+            href="#contact"
+            className="text-[#D7E2EA] font-medium uppercase tracking-wider text-sm md:text-lg lg:text-[1.4rem] hover:opacity-70 transition-opacity duration-200"
+          >
+            Contact
+          </a>
         </nav>
       </FadeIn>
 

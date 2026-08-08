@@ -41,9 +41,10 @@ interface ProjectCardProps {
   index: number;
   totalCards: number;
   progress: any;
+  onLaunchPlatform?: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, totalCards, progress }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, totalCards, progress, onLaunchPlatform }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   
   // The scroll range where this specific card starts being covered by the next card
@@ -85,7 +86,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, totalCards, p
               <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-medium uppercase">{project.name}</h3>
             </div>
           </div>
-          <LiveProjectButton />
+          <LiveProjectButton onClick={onLaunchPlatform} />
         </div>
 
         {/* Bottom Row Images */}
@@ -113,6 +114,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, totalCards, p
               src={project.images.col2} 
               alt={`${project.name} main`}
               className="w-full h-full object-cover rounded-[40px] sm:rounded-[50px] md:rounded-[60px]"
+              style={{ minHeight: 'clamp(300px, 40vw, 600px)' }}
               loading="lazy"
             />
           </div>
@@ -122,7 +124,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, totalCards, p
   );
 }
 
-export const ProjectsSection: React.FC = () => {
+interface ProjectsSectionProps {
+  onLaunchPlatform?: () => void;
+}
+
+export const ProjectsSection: React.FC<ProjectsSectionProps> = ({ onLaunchPlatform }) => {
   const containerRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -149,6 +155,7 @@ export const ProjectsSection: React.FC = () => {
             index={i} 
             totalCards={projects.length} 
             progress={scrollYProgress}
+            onLaunchPlatform={onLaunchPlatform}
           />
         ))}
       </div>
