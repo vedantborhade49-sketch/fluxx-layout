@@ -1,89 +1,51 @@
 import React from 'react';
 import { useEnvironmentStore } from '../stores/environmentStore';
+import { GlassPanel } from '../components/ui/GlassPanel';
+import { Metric } from '../components/ui/Metric';
 
 export const OverviewView: React.FC = () => {
   const { currentReading, eri } = useEnvironmentStore();
+  const sensors = currentReading?.sensors;
 
   return (
-    <div className="h-full flex items-center justify-center p-8 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-[#06090E] to-black rounded-3xl border border-white/5 overflow-hidden relative shadow-2xl">
+    <div className="w-full h-full p-8 flex flex-col justify-center items-center bg-white/50 relative">
       
-      {/* Background Ambience */}
-      <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-[#0EA5E9] rounded-full blur-[150px] opacity-10 mix-blend-screen -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-emerald-500 rounded-full blur-[150px] opacity-[0.07] mix-blend-screen translate-x-1/3 translate-y-1/3" />
-      
-      {/* Minimal ASCII / Terminal-style UI box */}
-      <div className="fluxx-glass-dark rounded-2xl w-full max-w-4xl p-1 shadow-2xl animate-float">
-        <div className="border border-white/10 rounded-xl overflow-hidden bg-black/40">
-          
-          {/* Header */}
-          <div className="flex justify-between items-center px-8 py-5 border-b border-white/10 bg-white/5">
-            <div>
-              <div className="flex items-center space-x-3 mb-1">
-                <h1 className="text-3xl font-black text-white tracking-tighter">FLUXX</h1>
-                <div className="h-4 w-px bg-white/20 mx-2" />
-                <span className="text-[10px] font-bold text-[#0EA5E9] uppercase tracking-widest px-2 py-1 bg-[#0EA5E9]/10 rounded border border-[#0EA5E9]/20">
-                  Kharghar Environmental Intelligence
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4 text-right">
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse-slow shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{currentReading?.mode === 'replay' ? 'DATA REPLAY' : 'LIVE'}</span>
-              </div>
-              <div className="text-sm font-mono text-slate-300 font-bold bg-black/50 px-3 py-1 rounded-md border border-white/5">
-                {currentReading ? new Date(currentReading.timestamp).toLocaleTimeString('en-US', { hour12: false }) : '15:24:08'}
-              </div>
-            </div>
+      {/* Decorative large blurred circle behind */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-fluxx-teal opacity-[0.03] blur-[100px] rounded-full pointer-events-none" />
+
+      <GlassPanel className="w-full max-w-5xl p-12 shadow-xl border border-slate-200 bg-white/60">
+        <div className="flex flex-col items-center text-center space-y-6 mb-16">
+          <div className="text-xs font-bold text-fluxx-muted uppercase tracking-widest px-3 py-1 bg-slate-100 rounded-full">
+            System Overview
           </div>
-
-          {/* Main Body */}
-          <div className="p-12 flex justify-between items-center bg-gradient-to-b from-transparent to-black/30">
-            
-            {/* Risk Index Block */}
-            <div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">ENVIRONMENTAL RISK</div>
-              <div className="flex items-end space-x-4">
-                <div className="text-7xl font-black text-white tracking-tighter leading-none shadow-black drop-shadow-lg">
-                  {eri.score}
-                </div>
-                <div className="mb-2">
-                  <div className={`text-sm font-bold uppercase tracking-widest ${
-                    eri.score > 75 ? 'text-red-500' : eri.score > 50 ? 'text-amber-500' : 'text-emerald-500'
-                  }`}>{eri.level}</div>
-                  <div className="text-[10px] text-slate-500 uppercase">/ 100</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Vertical Divider */}
-            <div className="w-px h-24 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-
-            {/* Key Sensors */}
-            <div className="flex space-x-12">
-              <div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">PM2.5</div>
-                <div className="flex items-baseline space-x-1">
-                  <span className="text-4xl font-black text-white">{currentReading?.sensors?.pm25.toFixed(1) || '--'}</span>
-                  <span className="text-xs font-mono text-slate-500">µg</span>
-                </div>
-                <div className="text-[9px] font-bold text-red-500 mt-2 tracking-wider">+8.2% SURGE</div>
-              </div>
-              
-              <div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">PM10</div>
-                <div className="flex items-baseline space-x-1">
-                  <span className="text-4xl font-black text-white">{currentReading?.sensors?.pm10.toFixed(1) || '--'}</span>
-                  <span className="text-xs font-mono text-slate-500">µg</span>
-                </div>
-                <div className="text-[9px] font-bold text-amber-500 mt-2 tracking-wider">ELEVATED</div>
-              </div>
-            </div>
-          </div>
-
+          <h2 className="text-5xl font-black text-fluxx-text tracking-tight">
+            Kharghar Node is <span className="text-fluxx-teal">Nominal</span>
+          </h2>
+          <p className="text-lg font-medium text-fluxx-muted max-w-2xl">
+            Environmental risk remains low. All sensor arrays and active VTOL fleets are operating within expected parameters.
+          </p>
         </div>
-      </div>
+
+        <div className="grid grid-cols-4 gap-8">
+          <div className="col-span-1 border-r border-slate-200 flex flex-col justify-center">
+            <div className="text-xs font-bold text-fluxx-muted uppercase tracking-widest mb-2">ERI Score</div>
+            <div className="flex items-baseline space-x-3">
+              <span className="text-6xl font-black text-fluxx-text">{eri.score}</span>
+              <span className="text-sm font-bold text-fluxx-muted">/ 100</span>
+            </div>
+            <div className="text-xs font-bold text-fluxx-teal uppercase tracking-widest mt-2">{eri.level}</div>
+          </div>
+
+          <div className="col-span-3 grid grid-cols-3 gap-y-10 gap-x-8 pl-8">
+            <Metric label="PM2.5" value={sensors?.pm25.toFixed(1) || '--'} unit="µg/m³" trend="8.2%" trendDirection="up" />
+            <Metric label="PM10" value={sensors?.pm10.toFixed(1) || '--'} unit="µg/m³" trend="4.1%" trendDirection="up" />
+            <Metric label="CO₂" value={sensors?.co2.toFixed(0) || '--'} unit="ppm" trend="1.2%" trendDirection="down" />
+            <Metric label="Temperature" value={sensors?.temperature.toFixed(1) || '--'} unit="°C" trend="0.4°C" trendDirection="up" />
+            <Metric label="Humidity" value={sensors?.humidity.toFixed(0) || '--'} unit="%" />
+            <Metric label="Wind" value={sensors?.windSpeed.toFixed(1) || '--'} unit="m/s" trend="SW" />
+          </div>
+        </div>
+      </GlassPanel>
 
     </div>
   );
