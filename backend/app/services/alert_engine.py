@@ -126,7 +126,7 @@ class AlertEngine:
                 
                 self._last_alert_time[key] = now
                 
-                alert_id = f"ALT-{int(now.timestamp())}-{drone_id[:4]}-{rule['type'][:4]}"
+                alert_id = f"ALT-{int(now.timestamp() * 1000)}-{drone_id}-{rule['type'][:4]}"
                 description = rule["desc_template"].format(val=val)
                 
                 alert_dict = {

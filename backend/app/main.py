@@ -39,6 +39,7 @@ from app.api.mission_intelligence import router as mission_intelligence_router
 from app.api.marketplace import router as marketplace_router
 from app.api.plugins import router as plugins_router
 from app.api.sdk import router as sdk_router
+from app.api.replay import router as replay_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("fluxx.backend")
@@ -109,6 +110,8 @@ app.include_router(mission_intelligence_router, prefix=settings.API_V1_STR)
 app.include_router(marketplace_router, prefix=settings.API_V1_STR)
 app.include_router(plugins_router, prefix=settings.API_V1_STR)
 app.include_router(sdk_router, prefix=settings.API_V1_STR)
+app.include_router(replay_router, prefix=settings.API_V1_STR)
+app.include_router(replay_router, prefix="/api")
 
 @app.get("/health")
 def health_check():

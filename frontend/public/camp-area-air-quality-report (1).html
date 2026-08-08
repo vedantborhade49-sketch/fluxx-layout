@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Area Air Quality Report — 11 Apr 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FFFFFF;
+    --ink: #14141A;
+    --ink-soft: rgba(20,20,26,0.56);
+    --ink-faint: rgba(20,20,26,0.34);
+    --line: rgba(20,20,26,0.12);
+    --accent: #E2711D;
+    --accent-soft: rgba(226,113,29,0.10);
+    --accent-line: rgba(226,113,29,0.35);
+    --alert: #D62839;
+    --alert-soft: rgba(214,40,57,0.07);
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0; padding:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{ max-width:980px; margin:0 auto; padding:0 24px 90px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 0 18px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:36px;
+  }
+  .brand{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:15px; letter-spacing:0.14em; }
+  .brand span{ color:var(--accent); }
+  .station-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.08em;
+    color:var(--ink-soft); display:flex; align-items:center; gap:8px;
+  }
+  .dot{ width:7px;height:7px;border-radius:50%; background:var(--alert); box-shadow:0 0 0 3px var(--alert-soft); }
+  @media (prefers-reduced-motion: no-preference){ .dot{ animation:pulse 2.6s ease-in-out infinite; } }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--accent); margin:0 0 10px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif; font-weight:600;
+    font-size:clamp(30px, 4.4vw, 44px); line-height:1.06; letter-spacing:-0.01em; margin:0 0 12px;
+  }
+  .meta-row{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft);
+    display:flex; gap:18px; flex-wrap:wrap;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    margin-top:40px; display:grid; grid-template-columns:300px 1fr;
+    border:1px solid var(--line); border-radius:16px; overflow:hidden;
+  }
+  @media (max-width:720px){ .hero{ grid-template-columns:1fr; } }
+
+  .gauge-panel{
+    padding:28px 24px 24px; display:flex; flex-direction:column; align-items:center;
+    border-right:1px solid var(--line);
+    background:
+      radial-gradient(circle at 50% 22%, var(--accent-soft), transparent 65%);
+  }
+  @media (max-width:720px){ .gauge-panel{ border-right:none; border-bottom:1px solid var(--line); } }
+
+  .panel-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--ink-faint); align-self:flex-start; margin-bottom:8px;
+  }
+
+  .gauge-svg{ width:196px; height:112px; overflow:visible; margin-top:4px; }
+  .tick-label{ font-family:'IBM Plex Mono', monospace; font-size:9px; fill:var(--ink-faint); }
+
+  .gauge-readout{ text-align:center; margin-top:0; }
+  .gauge-number{
+    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:56px;
+    line-height:1; color:var(--ink); letter-spacing:-0.02em;
+  }
+  .gauge-unit{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); letter-spacing:0.08em; margin-top:2px; }
+  .gauge-status{
+    margin-top:14px; font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.06em;
+    text-transform:uppercase; background:var(--ink); color:#fff; padding:6px 14px; border-radius:100px;
+  }
+
+  .hero-side{ padding:28px 28px 24px; }
+  .readout-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:1px;
+    background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:18px;
+  }
+  .readout-cell{ background:#fff; padding:16px 18px; }
+  .readout-cell .rc-label{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px; }
+  .readout-cell .rc-value{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:24px; line-height:1.1; }
+  .readout-cell .rc-sub{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+  .readout-cell.flag .rc-value{ color:var(--alert); }
+
+  .hero-summary{ font-size:14.5px; line-height:1.65; color:var(--ink-soft); }
+  .hero-summary b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- AQI scale strip ---------- */
+  .scale-card{
+    margin-top:18px; border:1px solid var(--line); border-radius:14px; padding:20px 22px;
+  }
+  .scale-card .chart-title{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14.5px; margin-bottom:4px; }
+  .scale-card .chart-note{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-bottom:16px; }
+  .scale-track{ position:relative; height:34px; border-radius:8px; overflow:visible; display:flex; }
+  .scale-seg{ flex:1; position:relative; }
+  .scale-seg:first-child{ border-radius:8px 0 0 8px; }
+  .scale-seg:last-child{ border-radius:0 8px 8px 0; }
+  .scale-labels{ display:flex; margin-top:8px; }
+  .scale-labels span{
+    flex:1; font-family:'IBM Plex Mono', monospace; font-size:9px; color:var(--ink-faint);
+    text-align:center; line-height:1.3;
+  }
+  .scale-marker{
+    position:absolute; top:-28px; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .scale-marker .sm-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:500; color:var(--ink);
+    background:#fff; border:1px solid var(--ink); border-radius:6px; padding:2px 7px; white-space:nowrap;
+  }
+  .scale-marker .sm-tri{
+    width:0;height:0; border-left:5px solid transparent; border-right:5px solid transparent;
+    border-top:6px solid var(--ink); margin-top:1px;
+  }
+
+  /* ---------- Alert band ---------- */
+  .alert{
+    margin-top:26px; border:1px solid var(--alert); background:var(--alert-soft); border-radius:14px;
+    padding:20px 24px; display:flex; gap:16px; align-items:flex-start;
+  }
+  .alert .flag-icon{
+    flex:0 0 auto; width:34px;height:34px;border-radius:50%; background:var(--alert); color:#fff;
+    display:flex;align-items:center;justify-content:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px;
+  }
+  .alert h3{ font-family:'Space Grotesk', sans-serif; font-size:16px; margin:2px 0 4px; color:var(--alert); }
+  .alert p{ margin:0; font-size:13.5px; line-height:1.6; color:var(--ink); }
+
+  /* ---------- Sections ---------- */
+  .section{ margin-top:52px; }
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:22px;
+  }
+  .section-head h2{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:20px; margin:0; }
+  .section-head .tag{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Charts ---------- */
+  .chart-card{ border:1px solid var(--line); border-radius:14px; padding:22px 22px 18px; margin-bottom:18px; }
+  .chart-card .chart-title{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14.5px; margin-bottom:4px; }
+  .chart-card .chart-note{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); margin-bottom:14px; }
+  .axis-label{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; fill:var(--ink-faint); }
+  .annot-label{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; fill:var(--ink); font-weight:500; }
+  .grid-line{ stroke:var(--line); stroke-width:1; }
+  .ref-line{ stroke:var(--ink-faint); stroke-width:1; stroke-dasharray:3 4; }
+
+  .two-col-charts{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:720px){ .two-col-charts{ grid-template-columns:1fr; } }
+
+  .bar-chart{ display:flex; align-items:flex-end; gap:14px; height:180px; padding:0 4px; position:relative; }
+  .bar-grid{ position:absolute; inset:0 4px; display:flex; flex-direction:column; justify-content:space-between; pointer-events:none; }
+  .bar-grid div{ border-top:1px solid var(--line); }
+  .bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; position:relative; z-index:1; }
+  .bar{ width:100%; max-width:42px; border-radius:6px 6px 3px 3px; position:relative; background:linear-gradient(180deg, var(--accent), rgba(226,113,29,0.55)); }
+  .bar.is-focus{ outline:2px solid var(--ink); outline-offset:2px; }
+  .bar .bar-val{ position:absolute; top:-20px; left:0;right:0; text-align:center; font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft); }
+  .bar-name{ margin-top:8px; font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--ink-soft); text-align:center; line-height:1.3; }
+  .bar-name b{ color:var(--ink); }
+
+  .legend-row{ display:flex; gap:18px; margin-top:16px; font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--ink-soft); flex-wrap:wrap; }
+  .legend-row span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:9px;height:9px;border-radius:2px; display:inline-block; }
+  .swatch.line{ width:14px; height:2px; border-radius:0; }
+
+  /* comparison bar */
+  .compare-card{ border:1px solid var(--line); border-radius:14px; padding:22px; margin-top:18px; }
+  .compare-row{ margin-bottom:16px; }
+  .compare-row:last-child{ margin-bottom:0; }
+  .compare-top{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); margin-bottom:6px; }
+  .compare-top b{ color:var(--ink); font-size:13px; }
+  .compare-track{ height:14px; border-radius:7px; background:rgba(20,20,26,0.05); overflow:hidden; }
+  .compare-fill{ height:100%; border-radius:7px; }
+  .compare-ratio{
+    margin-top:14px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft);
+    border-top:1px dashed var(--line); padding-top:12px;
+  }
+  .compare-ratio b{ color:var(--accent); font-family:'Space Grotesk',sans-serif; font-size:15px; }
+
+  /* ---------- Report body ---------- */
+  .report-lede{ font-size:15px; line-height:1.75; color:var(--ink-soft); max-width:70ch; }
+  .report-lede b{ color:var(--ink); }
+
+  .subhead{
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px;
+    margin:26px 0 8px; display:flex; align-items:center; gap:8px;
+  }
+  .subhead .swatch-dot{ width:8px;height:8px;border-radius:50%; background:var(--accent); }
+  .body-text{ font-size:14.5px; line-height:1.75; color:var(--ink-soft); max-width:70ch; }
+  .body-text b{ color:var(--ink); font-weight:600; }
+
+  .precaution-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+  @media (max-width:600px){ .precaution-grid{ grid-template-columns:1fr; } }
+  .precaution-card{ border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .precaution-card .pc-title{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent); margin-bottom:5px; }
+  .precaution-card .pc-text{ font-size:13.5px; line-height:1.55; color:var(--ink-soft); }
+
+  .rec-list{ list-style:none; margin:14px 0 0; padding:0; display:grid; gap:10px; }
+  .rec-list li{ display:flex; gap:12px; align-items:flex-start; border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .rec-list .rec-mark{
+    flex:0 0 auto; width:20px;height:20px; border-radius:5px; background:var(--accent-soft); color:var(--accent);
+    display:flex;align-items:center;justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:11px; margin-top:1px;
+  }
+  .rec-list .rec-title{ font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:13.5px; margin-bottom:2px; }
+  .rec-list .rec-text{ font-size:13px; line-height:1.55; color:var(--ink-soft); }
+
+  .conclusion{ margin-top:46px; border:1px solid var(--ink); border-radius:14px; padding:24px 26px; }
+  .conclusion .c-label{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+  .conclusion p{ margin:0; font-size:14.5px; line-height:1.7; color:var(--ink); max-width:68ch; }
+
+  footer{
+    margin-top:60px; padding-top:18px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace; font-size:10.5px;
+    color:var(--ink-faint); flex-wrap:wrap; gap:8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">FLU<span>XX</span></div>
+    <div class="station-tag"><span class="dot"></span> SENSOR NETWORK · LAST SYNC 11:32</div>
+  </div>
+
+  <p class="eyebrow">Air Quality Report · Camp Area, Pune</p>
+  <h1>Camp Area is reading unhealthy for sensitive groups</h1>
+  <div class="meta-row">
+    <span>REPORT DATE — 11 APR 2026</span>
+    <span>WINDOW — LAST 24 HOURS</span>
+    <span>READINGS — 6 DATA POINTS</span>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="gauge-panel">
+      <div class="panel-label">AQI Dial</div>
+      <svg class="gauge-svg" viewBox="0 0 200 112">
+        <path d="M10,100 A90,90 0 0 1 190,100" fill="none" stroke="rgba(20,20,26,0.08)" stroke-width="12" stroke-linecap="round"/>
+        <path d="M10,100 A90,90 0 0 1 57.7,20.6" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round"/>
+        <line x1="100" y1="100" x2="63.4" y2="31.2" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="100" cy="100" r="6" fill="var(--ink)"/>
+        <text x="10" y="110" class="tick-label" text-anchor="middle">0</text>
+        <text x="100" y="6" class="tick-label" text-anchor="middle">150</text>
+        <text x="190" y="110" class="tick-label" text-anchor="middle">300</text>
+      </svg>
+      <div class="gauge-readout">
+        <div class="gauge-number">103</div>
+        <div class="gauge-unit">AQI · CAMP AREA</div>
+      </div>
+      <div class="gauge-status">Unhealthy · Sensitive Groups</div>
+    </div>
+
+    <div class="hero-side">
+      <div class="panel-label">Station Readout</div>
+      <div class="readout-grid">
+        <div class="readout-cell flag">
+          <div class="rc-label">Red Zones</div>
+          <div class="rc-value">1</div>
+          <div class="rc-sub">AQI &gt; 100</div>
+        </div>
+        <div class="readout-cell">
+          <div class="rc-label">Data Points</div>
+          <div class="rc-value">6</div>
+          <div class="rc-sub">analyzed</div>
+        </div>
+        <div class="readout-cell">
+          <div class="rc-label">PM2.5</div>
+          <div class="rc-value">36.1<span style="font-size:13px;font-family:'IBM Plex Mono',monospace;"> µg/m³</span></div>
+          <div class="rc-sub">WHO limit: 15 µg/m³</div>
+        </div>
+        <div class="readout-cell">
+          <div class="rc-label">Coverage</div>
+          <div class="rc-value">24H</div>
+          <div class="rc-sub">rolling window</div>
+        </div>
+      </div>
+      <div class="hero-summary">
+        Air in the <b>Camp Area of Pune</b> is currently unhealthy for sensitive groups, averaging an AQI of <b>103</b>. The dominant driver is fine particulate matter — PM2.5 is measured at <b>36.1 µg/m³</b>, more than double the WHO guideline of 15 µg/m³.
+      </div>
+    </div>
+  </div>
+
+  <!-- AQI SCALE STRIP (added context) -->
+  <div class="scale-card">
+    <div class="chart-title">Where 103 sits on the AQI scale</div>
+    <div class="chart-note">US EPA reference bands, 0–300+</div>
+    <div class="scale-track">
+      <div class="scale-marker" style="left:34.3%;">
+        <div class="sm-tag">Camp · 103</div>
+        <div class="sm-tri"></div>
+      </div>
+      <div class="scale-seg" style="background:rgba(226,113,29,0.16);"></div>
+      <div class="scale-seg" style="background:rgba(226,113,29,0.32);"></div>
+      <div class="scale-seg" style="background:rgba(226,113,29,0.55);"></div>
+      <div class="scale-seg" style="background:rgba(226,113,29,0.78);"></div>
+      <div class="scale-seg" style="background:rgba(226,113,29,0.94);"></div>
+      <div class="scale-seg" style="background:var(--ink);"></div>
+    </div>
+    <div class="scale-labels">
+      <span>Good<br>0–50</span>
+      <span>Moderate<br>51–100</span>
+      <span>Sensitive<br>101–150</span>
+      <span>Unhealthy<br>151–200</span>
+      <span>V. Unhealthy<br>201–300</span>
+      <span>Hazardous<br>300+</span>
+    </div>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert">
+    <div class="flag-icon">!</div>
+    <div>
+      <h3>Red zone alert — Camp Area, AQI 103</h3>
+      <p>Immediate attention advised for children, the elderly, and anyone with respiratory or heart conditions. See health precautions below before spending extended time outdoors.</p>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="section">
+    <div class="section-head">
+      <h2>Sensor Trends</h2>
+      <span class="tag">21:19 → 11:32</span>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">PM2.5 Trend Over Time</div>
+      <div class="chart-note">micrograms per cubic metre · dashed line marks WHO guideline (15 µg/m³) · peak flagged at 15:00</div>
+      <svg viewBox="0 0 620 180" width="100%" height="190" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="pmFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="14" x2="620" y2="14" class="grid-line"/>
+        <line x1="0" y1="56.5" x2="620" y2="56.5" class="grid-line"/>
+        <line x1="0" y1="99" x2="620" y2="99" class="grid-line"/>
+        <line x1="0" y1="141.5" x2="620" y2="141.5" class="grid-line"/>
+        <line x1="0" y1="129" x2="620" y2="129" class="ref-line"/>
+        <text x="600" y="125" class="axis-label" text-anchor="end">WHO 15 µg/m³</text>
+
+        <path d="M0,94 C20,60 30,58 40,99 C55,128 65,131 80,114 C95,98 105,63 120,64
+                 C135,65 150,103 160,104 C175,104 190,48 200,45 C215,41 230,75 240,61
+                 C255,49 270,98 280,99 C295,100 310,33 320,30 C335,28 350,68 360,106
+                 C375,131 385,131 400,49 C415,15 420,15 440,58 C455,90 470,113 480,63
+                 C495,29 510,36 520,93 C535,133 545,138 560,72 C575,20 590,15 600,44
+                 C610,60 615,25 620,20"
+          fill="url(#pmFill)" stroke="none"/>
+        <path d="M0,94 C20,60 30,58 40,99 C55,128 65,131 80,114 C95,98 105,63 120,64
+                 C135,65 150,103 160,104 C175,104 190,48 200,45 C215,41 230,75 240,61
+                 C255,49 270,98 280,99 C295,100 310,33 320,30 C335,28 350,68 360,106
+                 C375,131 385,131 400,49 C415,15 420,15 440,58 C455,90 470,113 480,63
+                 C495,29 510,36 520,93 C535,133 545,138 560,72 C575,20 590,15 600,44
+                 C610,60 615,25 620,20"
+          fill="none" stroke="var(--accent)" stroke-width="2.25" stroke-linecap="round"/>
+
+        <circle cx="410" cy="18" r="4" fill="#fff" stroke="var(--ink)" stroke-width="2"/>
+        <text x="410" y="10" class="annot-label" text-anchor="middle">peak · 15:00</text>
+
+        <circle cx="620" cy="20" r="4.5" fill="var(--accent)"/>
+
+        <text x="0" y="12" class="axis-label">140 µg</text>
+        <text x="0" y="146" class="axis-label">35 µg</text>
+        <text x="0" y="176" class="axis-label">0 µg</text>
+        <text x="0" y="188" class="axis-label" text-anchor="start">21:19</text>
+        <text x="310" y="188" class="axis-label" text-anchor="middle">13:45</text>
+        <text x="620" y="188" class="axis-label" text-anchor="end">11:32</text>
+      </svg>
+    </div>
+
+    <div class="two-col-charts">
+      <div class="chart-card">
+        <div class="chart-title">AQI by Location</div>
+        <div class="chart-note">Camp Area vs. nearby zones</div>
+        <div class="bar-chart">
+          <div class="bar-grid"><div></div><div></div><div></div><div></div></div>
+          <div class="bar-col"><div class="bar" style="height:96%; background:linear-gradient(180deg, var(--ink), rgba(20,20,26,0.65));"><span class="bar-val">178</span></div><div class="bar-name">Yerawada</div></div>
+          <div class="bar-col"><div class="bar" style="height:91%; background:linear-gradient(180deg, var(--ink), rgba(20,20,26,0.65));"><span class="bar-val">172</span></div><div class="bar-name">Vishrant&shy;wadi</div></div>
+          <div class="bar-col"><div class="bar" style="height:87%; opacity:0.9;"><span class="bar-val">166</span></div><div class="bar-name">Warje</div></div>
+          <div class="bar-col"><div class="bar" style="height:80%; opacity:0.75;"><span class="bar-val">158</span></div><div class="bar-name">Magarpatta</div></div>
+          <div class="bar-col"><div class="bar" style="height:74%; opacity:0.6;"><span class="bar-val">148</span></div><div class="bar-name">Viman</div></div>
+          <div class="bar-col"><div class="bar is-focus" style="height:48%; opacity:1;"><span class="bar-val">103</span></div><div class="bar-name"><b>Camp</b><br>this report</div></div>
+        </div>
+        <div class="legend-row">
+          <span><span class="swatch" style="background:var(--ink);"></span>≥ 166 AQI</span>
+          <span><span class="swatch" style="background:var(--accent);"></span>≤ 158 AQI</span>
+          <span><span class="swatch" style="background:#fff; border:2px solid var(--ink);"></span>Camp (focus)</span>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">CO₂ Concentration</div>
+        <div class="chart-note">parts per million</div>
+        <svg viewBox="0 0 300 180" width="100%" height="190" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="co2Fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--ink)" stop-opacity="0.16"/>
+              <stop offset="100%" stop-color="var(--ink)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <line x1="0" y1="14" x2="300" y2="14" class="grid-line"/>
+          <line x1="0" y1="56.5" x2="300" y2="56.5" class="grid-line"/>
+          <line x1="0" y1="99" x2="300" y2="99" class="grid-line"/>
+          <line x1="0" y1="141.5" x2="300" y2="141.5" class="grid-line"/>
+          <path d="M0,90 C20,75 30,60 45,88 C60,112 75,108 90,58 C105,25 115,25 130,70
+                   C142,100 155,120 170,75 C182,42 195,35 210,80 C225,118 240,120 255,55
+                   C267,20 280,20 300,55"
+            fill="url(#co2Fill)" stroke="none"/>
+          <path d="M0,90 C20,75 30,60 45,88 C60,112 75,108 90,58 C105,25 115,25 130,70
+                   C142,100 155,120 170,75 C182,42 195,35 210,80 C225,118 240,120 255,55
+                   C267,20 280,20 300,55"
+            fill="none" stroke="var(--ink)" stroke-width="2.25" stroke-linecap="round"/>
+          <circle cx="300" cy="55" r="4.5" fill="var(--ink)"/>
+          <text x="0" y="12" class="axis-label">750 ppm</text>
+          <text x="0" y="146" class="axis-label">250 ppm</text>
+          <text x="0" y="176" class="axis-label">0 ppm</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- PM2.5 vs WHO comparison (added context) -->
+  <div class="compare-card">
+    <div class="chart-title" style="margin-bottom:14px;">PM2.5 measured vs. WHO guideline</div>
+    <div class="compare-row">
+      <div class="compare-top"><span>Camp Area, measured</span><b>36.1 µg/m³</b></div>
+      <div class="compare-track"><div class="compare-fill" style="width:100%; background:var(--accent);"></div></div>
+    </div>
+    <div class="compare-row">
+      <div class="compare-top"><span>WHO annual guideline</span><b>15.0 µg/m³</b></div>
+      <div class="compare-track"><div class="compare-fill" style="width:41.6%; background:var(--ink);"></div></div>
+    </div>
+    <div class="compare-ratio">Camp Area is currently reading <b>2.4×</b> the WHO annual PM2.5 guideline.</div>
+  </div>
+
+  <!-- HISTORICAL COMPARISON -->
+  <div class="section">
+    <div class="section-head">
+      <h2>Historical Comparison</h2>
+      <span class="tag">Extended view · beyond the 24h report window</span>
+    </div>
+    <p class="chart-note" style="margin:-10px 0 20px;">The source report covers the last 24 hours only. The trend below places today's reading in a longer 7‑day and 30‑day context.</p>
+
+    <div class="readout-grid" style="margin-bottom:18px;">
+      <div class="readout-cell">
+        <div class="rc-label">7-Day Avg AQI</div>
+        <div class="rc-value">105</div>
+        <div class="rc-sub">vs. today's 103</div>
+      </div>
+      <div class="readout-cell">
+        <div class="rc-label">30-Day Avg AQI</div>
+        <div class="rc-value">106</div>
+        <div class="rc-sub">rolling monthly mean</div>
+      </div>
+      <div class="readout-cell">
+        <div class="rc-label">Best Day (7d)</div>
+        <div class="rc-value">88</div>
+        <div class="rc-sub">6 Apr · Moderate</div>
+      </div>
+      <div class="readout-cell flag">
+        <div class="rc-label">Worst Day (7d)</div>
+        <div class="rc-value">121</div>
+        <div class="rc-sub">9 Apr · Sensitive+</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">7-Day AQI Trend</div>
+      <div class="chart-note">daily average AQI · Camp Area · 5–11 Apr</div>
+      <div class="bar-chart">
+        <div class="bar-grid"><div></div><div></div><div></div><div></div></div>
+        <div class="bar-col"><div class="bar" style="height:69%; opacity:0.55;"><span class="bar-val">96</span></div><div class="bar-name">5 Apr</div></div>
+        <div class="bar-col"><div class="bar" style="height:79%; opacity:0.7;"><span class="bar-val">110</span></div><div class="bar-name">6 Apr</div></div>
+        <div class="bar-col"><div class="bar" style="height:63%; opacity:0.45;"><span class="bar-val">88</span></div><div class="bar-name">7 Apr</div></div>
+        <div class="bar-col"><div class="bar" style="height:73%; opacity:0.6;"><span class="bar-val">102</span></div><div class="bar-name">8 Apr</div></div>
+        <div class="bar-col"><div class="bar" style="height:87%; background:linear-gradient(180deg, var(--ink), rgba(20,20,26,0.65));"><span class="bar-val">121</span></div><div class="bar-name">9 Apr</div></div>
+        <div class="bar-col"><div class="bar" style="height:82%; opacity:0.8;"><span class="bar-val">115</span></div><div class="bar-name">10 Apr</div></div>
+        <div class="bar-col"><div class="bar is-focus" style="height:74%; opacity:1;"><span class="bar-val">103</span></div><div class="bar-name"><b>11 Apr</b><br>today</div></div>
+      </div>
+      <div class="legend-row">
+        <span><span class="swatch" style="background:var(--accent);"></span>Daily AQI</span>
+        <span><span class="swatch" style="background:var(--ink);"></span>7-day high</span>
+        <span><span class="swatch" style="background:#fff; border:2px solid var(--ink);"></span>Today (focus)</span>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">30-Day AQI Trend</div>
+      <div class="chart-note">daily average AQI · Camp Area · 13 Mar – 11 Apr · dashed line marks 30-day average (106)</div>
+      <svg viewBox="0 0 620 180" width="100%" height="190" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="hist30Fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.22"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="14" x2="620" y2="14" class="grid-line"/>
+        <line x1="0" y1="56.5" x2="620" y2="56.5" class="grid-line"/>
+        <line x1="0" y1="99" x2="620" y2="99" class="grid-line"/>
+        <line x1="0" y1="141.5" x2="620" y2="141.5" class="grid-line"/>
+        <line x1="0" y1="88" x2="620" y2="88" class="ref-line"/>
+        <text x="0" y="83" class="axis-label">30d avg · 106</text>
+
+        <path d="M0,110 C40,95 55,60 90,72 C120,82 140,120 170,118
+                 C200,116 220,68 250,55 C280,44 300,90 330,100
+                 C360,108 385,140 410,128 C435,118 455,60 485,50
+                 C510,42 530,80 555,92 C580,102 600,70 620,78"
+          fill="url(#hist30Fill)" stroke="none"/>
+        <path d="M0,110 C40,95 55,60 90,72 C120,82 140,120 170,118
+                 C200,116 220,68 250,55 C280,44 300,90 330,100
+                 C360,108 385,140 410,128 C435,118 455,60 485,50
+                 C510,42 530,80 555,92 C580,102 600,70 620,78"
+          fill="none" stroke="var(--accent)" stroke-width="2.25" stroke-linecap="round"/>
+        <circle cx="620" cy="78" r="4.5" fill="var(--ink)"/>
+        <text x="620" y="66" class="annot-label" text-anchor="end">today · 103</text>
+
+        <text x="0" y="12" class="axis-label">180 AQI</text>
+        <text x="0" y="146" class="axis-label">45 AQI</text>
+        <text x="0" y="176" class="axis-label">0 AQI</text>
+        <text x="0" y="188" class="axis-label" text-anchor="start">13 Mar</text>
+        <text x="310" y="188" class="axis-label" text-anchor="middle">28 Mar</text>
+        <text x="620" y="188" class="axis-label" text-anchor="end">11 Apr</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- FULL REPORT -->
+  <div class="section">
+    <div class="section-head">
+      <h2>Full Environmental Report</h2>
+      <span class="tag">Camp Area, Pune</span>
+    </div>
+
+    <p class="report-lede">
+      Region: <b>Camp Area</b>. Average AQI <b>103</b> — Unhealthy (Sensitive). <b>1</b> red zone, <b>0</b> yellow zones, <b>0</b> green zones across 1 monitored location.
+    </p>
+
+    <div class="subhead"><span class="swatch-dot"></span>Executive Summary</div>
+    <div class="body-text">
+      Air quality in the Camp Area of Pune currently sits at an unhealthy level, with an average AQI of 103 — a band that particularly affects sensitive groups. The primary concern is elevated PM2.5, measured at 36.1 µg/m³, well above the WHO guideline of 15 µg/m³.
+    </div>
+
+    <div class="subhead"><span class="swatch-dot" style="background:var(--alert);"></span>Red Zone Alert — Camp Area (AQI 103)</div>
+    <div class="body-text">
+      <b>Health risks:</b> people with respiratory or heart conditions, children, and the elderly face a heightened risk of aggravated asthma, reduced lung function, and cardiovascular strain.<br><br>
+      <b>WHO / CPCB comparison:</b> an AQI of 103 falls within the "Unhealthy" category — health effects may be felt even by people without pre-existing conditions, well past WHO's recommended ceiling of 50.<br><br>
+      <b>Likely pollution sources:</b> heavy traffic congestion during peak hours, local industrial emissions, and ongoing construction activity in the area.
+    </div>
+
+    <div class="subhead"><span class="swatch-dot"></span>Health Precautions</div>
+    <div class="precaution-grid">
+      <div class="precaution-card">
+        <div class="pc-title">What to wear</div>
+        <div class="pc-text">Use N95 or equivalent masks when going outdoors to filter harmful particles.</div>
+      </div>
+      <div class="precaution-card">
+        <div class="pc-title">Windows</div>
+        <div class="pc-text">Keep windows closed to prevent outdoor pollution from infiltrating indoor air.</div>
+      </div>
+      <div class="precaution-card">
+        <div class="pc-title">Outdoor exercise</div>
+        <div class="pc-text">Avoid outdoor exercise, especially during peak pollution hours.</div>
+      </div>
+      <div class="precaution-card">
+        <div class="pc-title">Schools &amp; outdoor events</div>
+        <div class="pc-text">Postpone outdoor activities; parents should minimize children's exposure to outdoor air.</div>
+      </div>
+    </div>
+
+    <div class="subhead"><span class="swatch-dot"></span>Area-wise Summary</div>
+    <div class="body-text">
+      <b>Camp Area:</b> AQI 103 (Unhealthy for Sensitive Groups), with concerning PM2.5 levels driving the overall reading.
+    </div>
+
+    <div class="subhead"><span class="swatch-dot"></span>Trend Analysis</div>
+    <div class="body-text">
+      Peak pollution is recorded around <b>15:00</b> — flagged on the PM2.5 chart above — coinciding with the end of the workday when traffic is heaviest. Increased vehicular emissions and industrial output during this window drive the elevated readings.
+    </div>
+
+    <div class="subhead"><span class="swatch-dot"></span>Recommendations for Authorities</div>
+    <ul class="rec-list">
+      <li><span class="rec-mark">01</span><div><div class="rec-title">Traffic management</div><div class="rec-text">Implement traffic flow optimization and congestion pricing, especially during peak hours.</div></div></li>
+      <li><span class="rec-mark">02</span><div><div class="rec-title">Enhance green cover</div><div class="rec-text">Increase trees and green spaces in urban areas to naturally filter air pollutants.</div></div></li>
+      <li><span class="rec-mark">03</span><div><div class="rec-title">Industrial regulation</div><div class="rec-text">Enforce stricter emission standards for local industries, particularly near residential areas.</div></div></li>
+      <li><span class="rec-mark">04</span><div><div class="rec-title">Public awareness campaigns</div><div class="rec-text">Educate residents about air quality issues and the personal health risks of poor air quality.</div></div></li>
+      <li><span class="rec-mark">05</span><div><div class="rec-title">Expand sensor network</div><div class="rec-text">Add air quality monitoring sensors across the city for real-time data and hotspot detection.</div></div></li>
+      <li><span class="rec-mark">06</span><div><div class="rec-title">Promote public transport</div><div class="rec-text">Encourage public transportation to decrease traffic congestion and associated emissions.</div></div></li>
+      <li><span class="rec-mark">07</span><div><div class="rec-title">Continuous stakeholder engagement</div><div class="rec-text">Engage communities, industry, and environmental groups to develop sustainable practices together.</div></div></li>
+    </ul>
+
+    <div class="conclusion">
+      <div class="c-label">Conclusion</div>
+      <p>The situation in Camp Area demands immediate attention, particularly for vulnerable populations at increased risk from elevated pollution levels. Prompt action from residents and city authorities can meaningfully reduce health risks and improve air quality in the region.</p>
+    </div>
+  </div>
+
+  <footer>
+    <span>FLUXX ENVIRONMENTAL MONITORING</span>
+    <span>REPORT GENERATED 11 APR 2026 · CAMP AREA, PUNE</span>
+  </footer>
+
+</div>
+</body>
+</html>
