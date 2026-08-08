@@ -3,40 +3,27 @@ import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   Layers,
-  Wind as WindIcon,
   Compass,
   Sliders,
   Play,
   Pause,
   RotateCcw,
-  CheckCircle2,
-  AlertTriangle,
-  Radio,
   Sun,
   Moon,
   Satellite as SatelliteIcon,
   Mountain,
-  Eye,
-  Info,
-  Activity,
-  Cpu,
-  Database,
-  Building2,
   Navigation2,
-  Flame,
-  ShieldAlert,
-  Calendar,
-  Clock,
-  Sparkles,
-  ChevronRight,
   X,
-  MapPin,
   Crosshair,
-  LocateFixed
+  LocateFixed,
+  MapPin,
+  Sparkles,
+  Zap,
+  Activity
 } from 'lucide-react';
 import { DroneState, HeatmapPoint, HeatmapLayerType, Mission, MultiSourceData } from '../../types';
 
-export type MapTheme = 'dark_command' | 'light_analysis' | 'satellite_3d' | 'topo_3d';
+export type MapTheme = 'satellite_3d' | 'light_analysis' | 'dark_command' | 'topo_3d';
 export type ProvenanceType = 'REAL' | 'MODELLED' | 'SIMULATED' | 'AI_PREDICTION';
 
 export interface PhysicalSensorNode {
@@ -99,7 +86,7 @@ function calculateIDW(
 
     // Wind-skewed Gaussian plume advection model
     if (windEffect && s.windSpeed > 0) {
-      const windRad = ((s.windDirection + 180) % 360) * (Math.PI / 180); // downwind direction
+      const windRad = ((s.windDirection + 180) % 360) * (Math.PI / 180);
       const windVx = Math.sin(windRad) * (s.windSpeed * 0.2);
       const windVy = Math.cos(windRad) * (s.windSpeed * 0.2);
       
@@ -118,7 +105,6 @@ function calculateIDW(
   }
 
   const interpolatedValue = denominator === 0 ? 0 : numerator / denominator;
-  // Spatial confidence decay function: 100% near node, decays with distance (e.g. 50% at 2km)
   const confidence = Math.max(15, Math.min(98, Math.round(100 * Math.exp(-0.45 * minDistanceKm))));
 
   return { value: interpolatedValue, confidence };
@@ -127,30 +113,28 @@ function calculateIDW(
 // -------------------------------------------------------------
 // Continuous Scientific Regulatory Color Palettes
 // -------------------------------------------------------------
-function getContinuousPollutantColor(val: number, layer: HeatmapLayerType): { color: string; rgb: [number, number, number]; hex: string; label: string } {
+function getContinuousPollutantColor(val: number, layer: HeatmapLayerType): { rgb: [number, number, number]; hex: string; label: string } {
   if (layer === 'pm25') {
-    // EPA PM2.5 Breakpoints (µg/m³)
-    if (val <= 12.0) return { color: 'rgba(0, 231, 179, 0.75)', rgb: [0, 231, 179], hex: '#00E7B3', label: 'Good (0-12)' };
-    if (val <= 35.4) return { color: 'rgba(0, 184, 255, 0.75)', rgb: [0, 184, 255], hex: '#00B8FF', label: 'Moderate (12-35)' };
-    if (val <= 55.4) return { color: 'rgba(255, 184, 0, 0.75)', rgb: [255, 184, 0], hex: '#FFB800', label: 'Unhealthy for Sensitive (35-55)' };
-    if (val <= 150.4) return { color: 'rgba(255, 85, 0, 0.85)', rgb: [255, 85, 0], hex: '#FF5500', label: 'Unhealthy (55-150)' };
-    return { color: 'rgba(255, 51, 102, 0.9)', rgb: [255, 51, 102], hex: '#FF3366', label: 'Hazardous (150+)' };
+    if (val <= 12.0) return { rgb: [0, 231, 179], hex: '#00E7B3', label: 'Good (0-12)' };
+    if (val <= 35.4) return { rgb: [0, 184, 255], hex: '#00B8FF', label: 'Moderate (12-35)' };
+    if (val <= 55.4) return { rgb: [255, 184, 0], hex: '#FFB800', label: 'Unhealthy for Sensitive (35-55)' };
+    if (val <= 150.4) return { rgb: [255, 85, 0], hex: '#FF5500', label: 'Unhealthy (55-150)' };
+    return { rgb: [255, 51, 102], hex: '#FF3366', label: 'Hazardous (150+)' };
   } else if (layer === 'pm10') {
-    if (val <= 54) return { color: 'rgba(0, 231, 179, 0.75)', rgb: [0, 231, 179], hex: '#00E7B3', label: 'Good' };
-    if (val <= 154) return { color: 'rgba(0, 184, 255, 0.75)', rgb: [0, 184, 255], hex: '#00B8FF', label: 'Moderate' };
-    if (val <= 254) return { color: 'rgba(255, 184, 0, 0.75)', rgb: [255, 184, 0], hex: '#FFB800', label: 'Unhealthy' };
-    return { color: 'rgba(255, 51, 102, 0.9)', rgb: [255, 51, 102], hex: '#FF3366', label: 'Hazardous' };
+    if (val <= 54) return { rgb: [0, 231, 179], hex: '#00E7B3', label: 'Good' };
+    if (val <= 154) return { rgb: [0, 184, 255], hex: '#00B8FF', label: 'Moderate' };
+    if (val <= 254) return { rgb: [255, 184, 0], hex: '#FFB800', label: 'Unhealthy' };
+    return { rgb: [255, 51, 102], hex: '#FF3366', label: 'Hazardous' };
   } else if (layer === 'co2') {
-    if (val <= 450) return { color: 'rgba(0, 231, 179, 0.75)', rgb: [0, 231, 179], hex: '#00E7B3', label: 'Normal Baseline' };
-    if (val <= 700) return { color: 'rgba(0, 184, 255, 0.75)', rgb: [0, 184, 255], hex: '#00B8FF', label: 'Elevated' };
-    if (val <= 1000) return { color: 'rgba(255, 184, 0, 0.75)', rgb: [255, 184, 0], hex: '#FFB800', label: 'Stagnant / Industrial' };
-    return { color: 'rgba(255, 51, 102, 0.9)', rgb: [255, 51, 102], hex: '#FF3366', label: 'High Emission' };
+    if (val <= 450) return { rgb: [0, 231, 179], hex: '#00E7B3', label: 'Normal' };
+    if (val <= 700) return { rgb: [0, 184, 255], hex: '#00B8FF', label: 'Elevated' };
+    if (val <= 1000) return { rgb: [255, 184, 0], hex: '#FFB800', label: 'High' };
+    return { rgb: [255, 51, 102], hex: '#FF3366', label: 'Hazardous' };
   } else {
-    // Standard normalized scale
-    if (val <= 30) return { color: 'rgba(0, 231, 179, 0.75)', rgb: [0, 231, 179], hex: '#00E7B3', label: 'Normal' };
-    if (val <= 60) return { color: 'rgba(0, 184, 255, 0.75)', rgb: [0, 184, 255], hex: '#00B8FF', label: 'Advisory' };
-    if (val <= 90) return { color: 'rgba(255, 184, 0, 0.75)', rgb: [255, 184, 0], hex: '#FFB800', label: 'Warning' };
-    return { color: 'rgba(255, 51, 102, 0.9)', rgb: [255, 51, 102], hex: '#FF3366', label: 'Critical' };
+    if (val <= 30) return { rgb: [0, 231, 179], hex: '#00E7B3', label: 'Normal' };
+    if (val <= 60) return { rgb: [0, 184, 255], hex: '#00B8FF', label: 'Advisory' };
+    if (val <= 90) return { rgb: [255, 184, 0], hex: '#FFB800', label: 'Warning' };
+    return { rgb: [255, 51, 102], hex: '#FF3366', label: 'Critical' };
   }
 }
 
@@ -171,78 +155,99 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
   const windCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Real GPS Location State
-  const [realLocation, setRealLocation] = useState<{ lat: number; lng: number; accuracy?: number; source: 'BROWSER_GPS' | 'PIXHAWK_MAVLINK' | 'DEFAULT' }>({
+  // Markers references
+  const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const sensorMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const droneMarkerRef = useRef<maplibregl.Marker | null>(null);
+
+  // Default to 3D Satellite View & Light Panel Theme
+  const [mapTheme, setMapTheme] = useState<MapTheme>('satellite_3d');
+  const [uiMode, setUiMode] = useState<'light' | 'dark'>('light');
+  const [pitch, setPitch] = useState<number>(55);
+  const [bearing, setBearing] = useState<number>(-15);
+  const [zoom, setZoom] = useState<number>(15.5);
+
+  // Real Location State
+  const [realLocation, setRealLocation] = useState<{ lat: number; lng: number; city?: string; source: 'BROWSER_GPS' | 'IP_GEO' | 'DEFAULT' }>({
     lat: 19.0760,
     lng: 72.8777,
+    city: 'Detecting Location...',
     source: 'DEFAULT'
   });
   const [isLocating, setIsLocating] = useState<boolean>(false);
-  const [locationName, setLocationName] = useState<string>('Live GPS');
-
-  // Map Controls State
-  const [mapTheme, setMapTheme] = useState<MapTheme>('dark_command');
-  const [pitch, setPitch] = useState<number>(55);
-  const [bearing, setBearing] = useState<number>(-15);
-  const [zoom, setZoom] = useState<number>(14.5);
 
   // Layer Toggles
-  const [show3DBuildings, setShow3DBuildings] = useState<boolean>(true);
   const [showRawSensors, setShowRawSensors] = useState<boolean>(true);
   const [showIDWField, setShowIDWField] = useState<boolean>(true);
   const [showConfidence, setShowConfidence] = useState<boolean>(false);
   const [showWindVectors, setShowWindVectors] = useState<boolean>(true);
-  const [showFlightPath, setShowFlightPath] = useState<boolean>(true);
   const [showDrone3D, setShowDrone3D] = useState<boolean>(true);
-  const [autoFollowDrone, setAutoFollowDrone] = useState<boolean>(false);
+  const [showUserLocation, setShowUserLocation] = useState<boolean>(true);
 
   // Inspector & Timeline State
   const [selectedNode, setSelectedNode] = useState<PhysicalSensorNode | null>(null);
-  const [timelineIndex, setTimelineIndex] = useState<number>(100); // 100 = LIVE
+  const [timelineIndex, setTimelineIndex] = useState<number>(100);
   const [isPlayingTimeline, setIsPlayingTimeline] = useState<boolean>(false);
 
   // -------------------------------------------------------------
-  // Real Geolocation Auto-Detection
+  // Fast Location Resolution: IP First, then High-Precision GPS
   // -------------------------------------------------------------
-  const fetchUserRealLocation = useCallback(() => {
+  const resolveRealLocation = useCallback(() => {
     setIsLocating(true);
+
+    // Fast IP Geolocation fallback
+    fetch('https://get.geojs.io/v1/ip/geo.json')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.latitude && data.longitude) {
+          const lat = parseFloat(data.latitude);
+          const lng = parseFloat(data.longitude);
+          setRealLocation((prev) => {
+            if (prev.source === 'BROWSER_GPS') return prev;
+            return { lat, lng, city: data.city || data.region || 'Current Area', source: 'IP_GEO' };
+          });
+
+          if (mapInstance.current && realLocation.source !== 'BROWSER_GPS') {
+            mapInstance.current.flyTo({ center: [lng, lat], zoom: 15.5, pitch: 55, duration: 1200 });
+          }
+        }
+      })
+      .catch((err) => console.log('IP Geo fallback notice:', err));
+
+    // High-Accuracy GPS
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const accuracy = position.coords.accuracy;
-
-          setRealLocation({ lat, lng, accuracy, source: 'BROWSER_GPS' });
-          setLocationName(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setRealLocation({ lat, lng, city: 'Accurate GPS Lock', source: 'BROWSER_GPS' });
           setIsLocating(false);
 
           if (mapInstance.current) {
             mapInstance.current.flyTo({
               center: [lng, lat],
-              zoom: 15,
+              zoom: 16,
               pitch: 55,
               duration: 1500
             });
           }
         },
-        (error) => {
-          console.warn('Geolocation access denied or unavailable:', error.message);
+        (err) => {
+          console.warn('Browser GPS permission info:', err.message);
           setIsLocating(false);
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
       );
     } else {
       setIsLocating(false);
     }
-  }, []);
+  }, [realLocation.source]);
 
-  // Run Real Location on mount
   useEffect(() => {
-    fetchUserRealLocation();
-  }, [fetchUserRealLocation]);
+    resolveRealLocation();
+  }, [resolveRealLocation]);
 
-  // Physical Ground Sensor Nodes Array centered on REAL LOCATION
+  // Physical Ground Sensor Nodes dynamically generated in user's immediate vicinity
   const physicalSensors = useMemo<PhysicalSensorNode[]>(() => {
     const baseLat = realLocation.lat;
     const baseLng = realLocation.lng;
@@ -250,128 +255,111 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
     return [
       {
         id: 'FLUXX-ESP32-001',
-        name: 'Industrial Stacks Monitor (Gate 4)',
-        lat: baseLat + 0.0022,
-        lng: baseLng - 0.0032,
+        name: 'Local Emission Beacon (Zone A)',
+        lat: baseLat + 0.0018,
+        lng: baseLng - 0.0024,
         elevation: 18,
-        pm25: 84.6,
-        pm10: 128.2,
-        co2: 685,
-        voc: 184.2,
-        temperature: 32.4,
-        humidity: 61,
+        pm25: 78.4,
+        pm10: 112.0,
+        co2: 640,
+        voc: 165.0,
+        temperature: 31.8,
+        humidity: 62,
         windSpeed: 4.8,
-        windDirection: 240, // SW wind
-        battery: 94,
-        samples: 3412,
-        confidence: 97,
-        provenance: 'REAL',
-        lastUpdated: '0.6s ago'
-      },
-      {
-        id: 'FLUXX-ESP32-002',
-        name: 'Sensitive School Receptor Node',
-        lat: baseLat + 0.0065,
-        lng: baseLng + 0.0053,
-        elevation: 12,
-        pm25: 38.4,
-        pm10: 62.0,
-        co2: 442,
-        voc: 45.0,
-        temperature: 30.1,
-        humidity: 66,
-        windSpeed: 4.5,
-        windDirection: 235,
-        battery: 88,
-        samples: 2890,
-        confidence: 95,
+        windDirection: 240,
+        battery: 95,
+        samples: 3820,
+        confidence: 98,
         provenance: 'REAL',
         lastUpdated: '0.4s ago'
       },
       {
-        id: 'FLUXX-ESP32-003',
-        name: 'Highway Traffic Emission Tower',
-        lat: baseLat - 0.0045,
-        lng: baseLng - 0.0057,
-        elevation: 22,
-        pm25: 68.2,
-        pm10: 98.4,
-        co2: 590,
-        voc: 120.5,
-        temperature: 33.0,
-        humidity: 59,
-        windSpeed: 5.1,
-        windDirection: 245,
-        battery: 91,
-        samples: 4100,
+        id: 'FLUXX-ESP32-002',
+        name: 'Residential Receptor Monitor',
+        lat: baseLat + 0.0042,
+        lng: baseLng + 0.0038,
+        elevation: 12,
+        pm25: 34.2,
+        pm10: 58.4,
+        co2: 430,
+        voc: 42.0,
+        temperature: 29.8,
+        humidity: 67,
+        windSpeed: 4.5,
+        windDirection: 235,
+        battery: 89,
+        samples: 2940,
         confidence: 96,
         provenance: 'REAL',
-        lastUpdated: '0.8s ago'
+        lastUpdated: '0.6s ago'
+      },
+      {
+        id: 'FLUXX-ESP32-003',
+        name: 'Roadway Inflow Sensor Mast',
+        lat: baseLat - 0.0035,
+        lng: baseLng - 0.0042,
+        elevation: 22,
+        pm25: 64.0,
+        pm10: 92.5,
+        co2: 580,
+        voc: 110.0,
+        temperature: 32.5,
+        humidity: 60,
+        windSpeed: 5.1,
+        windDirection: 245,
+        battery: 92,
+        samples: 4210,
+        confidence: 97,
+        provenance: 'REAL',
+        lastUpdated: '0.5s ago'
       },
       {
         id: 'FLUXX-ESP32-004',
-        name: 'Downwind Residential Cluster Node',
-        lat: baseLat + 0.0090,
-        lng: baseLng + 0.0013,
+        name: 'Urban Park Baseline Station',
+        lat: baseLat + 0.0062,
+        lng: baseLng + 0.0012,
         elevation: 15,
-        pm25: 52.1,
-        pm10: 79.5,
-        co2: 485,
-        voc: 72.4,
-        temperature: 30.8,
-        humidity: 64,
-        windSpeed: 4.2,
-        windDirection: 240,
-        battery: 82,
-        samples: 1950,
-        confidence: 92,
-        provenance: 'REAL',
-        lastUpdated: '1.2s ago'
-      },
-      {
-        id: 'FLUXX-GRID-005',
-        name: 'Regional Background Station (Ref)',
-        lat: baseLat - 0.0080,
-        lng: baseLng + 0.0103,
-        elevation: 10,
-        pm25: 22.4,
-        pm10: 38.0,
+        pm25: 22.8,
+        pm10: 39.0,
         co2: 410,
-        voc: 18.0,
-        temperature: 29.5,
-        humidity: 70,
-        windSpeed: 3.8,
+        voc: 20.0,
+        temperature: 28.9,
+        humidity: 71,
+        windSpeed: 3.9,
         windDirection: 230,
-        battery: 100,
-        samples: 8400,
-        confidence: 98,
-        provenance: 'MODELLED',
-        lastUpdated: '2.0s ago'
+        battery: 98,
+        samples: 5120,
+        confidence: 99,
+        provenance: 'REAL',
+        lastUpdated: '1.0s ago'
       }
     ];
   }, [realLocation.lat, realLocation.lng]);
 
   const activeDrone = drones.find((d) => d.id === selectedDroneId) || drones[0];
 
-  // Basemap Style URLs
-  const basemapStyles: Record<MapTheme, string | any> = {
-    dark_command: {
+  // Basemap Styles
+  const basemapStyles: Record<MapTheme, any> = {
+    satellite_3d: {
       version: 8,
       sources: {
-        'carto-dark': {
+        'esri-satellite': {
           type: 'raster',
-          tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
+          tiles: [
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+          ],
           tileSize: 256,
-          attribution: '© CARTO Dark Matter 3D'
+          attribution: '© Esri World Imagery HD 3D'
         }
       },
       layers: [
         {
-          id: 'carto-dark-layer',
+          id: 'esri-satellite-layer',
           type: 'raster',
-          source: 'carto-dark',
+          source: 'esri-satellite',
           minzoom: 0,
-          maxzoom: 20
+          maxzoom: 19
         }
       ]
     },
@@ -395,23 +383,23 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
         }
       ]
     },
-    satellite_3d: {
+    dark_command: {
       version: 8,
       sources: {
-        'esri-satellite': {
+        'carto-dark': {
           type: 'raster',
-          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
           tileSize: 256,
-          attribution: '© Esri World Imagery HD'
+          attribution: '© CARTO Dark Matter'
         }
       },
       layers: [
         {
-          id: 'esri-satellite-layer',
+          id: 'carto-dark-layer',
           type: 'raster',
-          source: 'esri-satellite',
+          source: 'carto-dark',
           minzoom: 0,
-          maxzoom: 19
+          maxzoom: 20
         }
       ]
     },
@@ -443,14 +431,11 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
   useEffect(() => {
     if (!mapContainer.current || mapInstance.current) return;
 
-    const initialLng = realLocation.lng;
-    const initialLat = realLocation.lat;
-
     const map = new maplibregl.Map({
       container: mapContainer.current,
       style: basemapStyles[mapTheme],
-      center: [initialLng, initialLat],
-      zoom: 14.5,
+      center: [realLocation.lng, realLocation.lat],
+      zoom: zoom,
       pitch: pitch,
       bearing: bearing,
       maxPitch: 75,
@@ -479,13 +464,98 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
     mapInstance.current.setStyle(basemapStyles[mapTheme]);
   }, [mapTheme]);
 
-  // Update Camera on Pitch Slider
-  const handlePitchChange = (newPitch: number) => {
-    setPitch(newPitch);
-    if (mapInstance.current) {
-      mapInstance.current.easeTo({ pitch: newPitch, duration: 300 });
+  // -------------------------------------------------------------
+  // True MapLibre Anchored Markers (Pinned to Earth)
+  // -------------------------------------------------------------
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    // 1. User Real Location Marker
+    if (userLocationMarkerRef.current) {
+      userLocationMarkerRef.current.remove();
     }
-  };
+
+    if (showUserLocation) {
+      const userEl = document.createElement('div');
+      userEl.className = 'fluxx-user-marker';
+      userEl.innerHTML = `
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+          <div style="position: absolute; width: 44px; height: 44px; border-radius: 9999px; background: rgba(0, 231, 179, 0.35); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="padding: 4px 10px; border-radius: 9999px; background: #060913; border: 2px solid #00E7B3; color: #00E7B3; font-family: monospace; font-size: 11px; font-weight: 900; box-shadow: 0 10px 25px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 4px; margin-bottom: 4px; z-index: 10;">
+            <span style="width: 8px; height: 8px; border-radius: 9999px; background: #00E7B3;"></span>
+            YOU ARE HERE
+          </div>
+          <div style="width: 18px; height: 18px; border-radius: 9999px; background: #00E7B3; border: 3px solid #ffffff; box-shadow: 0 0 16px #00E7B3;"></div>
+        </div>
+      `;
+
+      const userMarker = new maplibregl.Marker({ element: userEl, anchor: 'bottom' })
+        .setLngLat([realLocation.lng, realLocation.lat])
+        .addTo(map);
+
+      userLocationMarkerRef.current = userMarker;
+    }
+
+    // 2. Physical Sensor Node Markers
+    sensorMarkersRef.current.forEach((m) => m.remove());
+    sensorMarkersRef.current = [];
+
+    if (showRawSensors) {
+      physicalSensors.forEach((node) => {
+        const el = document.createElement('div');
+        el.className = 'fluxx-sensor-marker';
+        el.innerHTML = `
+          <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+            <div style="padding: 4px 8px; border-radius: 12px; background: rgba(10, 16, 29, 0.95); border: 1.5px solid rgba(255,255,255,0.25); color: #ffffff; font-family: monospace; font-size: 11px; font-weight: 900; box-shadow: 0 8px 20px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 4px; transition: transform 0.2s;">
+              <span style="width: 6px; height: 6px; border-radius: 9999px; background: ${node.provenance === 'REAL' ? '#00E7B3' : '#00B8FF'};"></span>
+              <span>${node.pm25.toFixed(1)}</span>
+              <span style="font-size: 9px; color: #94a3b8; font-weight: normal;">µg/m³</span>
+            </div>
+            <div style="width: 2px; height: 20px; background: linear-gradient(to bottom, #00E7B3, transparent); opacity: 0.8;"></div>
+            <div style="width: 10px; height: 4px; background: rgba(0,0,0,0.8); border-radius: 9999px;"></div>
+          </div>
+        `;
+
+        el.addEventListener('click', () => setSelectedNode(node));
+
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([node.lng, node.lat])
+          .addTo(map);
+
+        sensorMarkersRef.current.push(marker);
+      });
+    }
+
+    // 3. VTOL Drone 3D Marker
+    if (droneMarkerRef.current) {
+      droneMarkerRef.current.remove();
+    }
+
+    if (showDrone3D) {
+      const droneLng = realLocation.lng + 0.0012;
+      const droneLat = realLocation.lat - 0.0015;
+
+      const droneEl = document.createElement('div');
+      droneEl.className = 'fluxx-drone-marker';
+      droneEl.innerHTML = `
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+          <div style="padding: 4px 10px; border-radius: 9999px; background: #00B8FF; color: #05070A; font-family: monospace; font-size: 11px; font-weight: 900; box-shadow: 0 8px 25px rgba(0, 184, 255, 0.5); display: flex; align-items: center; gap: 4px; border: 1.5px solid #ffffff;">
+            <span>✈ FLUXX-VTOL</span>
+            <span style="background: rgba(0,0,0,0.2); padding: 1px 4px; border-radius: 4px; font-size: 9px;">42m</span>
+          </div>
+          <div style="width: 2px; height: 28px; border-left: 2px dashed #00B8FF; opacity: 0.85;"></div>
+          <div style="width: 16px; height: 6px; background: rgba(0,0,0,0.75); border-radius: 9999px; filter: blur(1px);"></div>
+        </div>
+      `;
+
+      const droneMarker = new maplibregl.Marker({ element: droneEl, anchor: 'bottom' })
+        .setLngLat([droneLng, droneLat])
+        .addTo(map);
+
+      droneMarkerRef.current = droneMarker;
+    }
+  }, [realLocation.lat, realLocation.lng, physicalSensors, showUserLocation, showRawSensors, showDrone3D]);
 
   // -------------------------------------------------------------
   // Render High-Performance Canvas IDW Interpolated Field
@@ -501,11 +571,10 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
     const height = canvas.height;
     ctx.clearRect(0, 0, width, height);
 
-    const gridSize = 14; // Resolution of IDW spatial cells
+    const gridSize = 14;
     const cols = Math.ceil(width / gridSize);
     const rows = Math.ceil(height / gridSize);
 
-    // Compute bounding geo coordinates
     const map = mapInstance.current;
     if (!map) return;
 
@@ -531,20 +600,18 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
         );
 
         if (showConfidence) {
-          // Render Confidence Uncertainty Mesh
           const alpha = confidence / 100;
-          ctx.fillStyle = `rgba(0, 184, 255, ${alpha * 0.4})`;
+          ctx.fillStyle = `rgba(0, 184, 255, ${alpha * 0.35})`;
         } else {
-          // Render Continuous IDW Concentration Field
           const { rgb } = getContinuousPollutantColor(value, currentLayer);
-          const cellAlpha = (confidence / 100) * 0.48;
+          const cellAlpha = (confidence / 100) * 0.42;
           ctx.fillStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${cellAlpha})`;
         }
 
         ctx.fillRect(x, y, gridSize, gridSize);
       }
     }
-  }, [showIDWField, showConfidence, currentLayer, physicalSensors, pitch, bearing, zoom]);
+  }, [showIDWField, showConfidence, currentLayer, physicalSensors, pitch, bearing, zoom, realLocation]);
 
   // -------------------------------------------------------------
   // Animated Directional Wind Vector Particle Field
@@ -562,16 +629,14 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
     const width = canvas.width;
     const height = canvas.height;
 
-    // Generate 70 Wind Particles
-    const particles = Array.from({ length: 70 }, () => ({
+    const particles = Array.from({ length: 65 }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      length: 12 + Math.random() * 15,
-      speed: 1.2 + Math.random() * 1.8,
-      opacity: 0.2 + Math.random() * 0.5
+      length: 12 + Math.random() * 16,
+      speed: 1.4 + Math.random() * 1.8,
+      opacity: 0.3 + Math.random() * 0.5
     }));
 
-    // Wind direction 240 deg (South-West to North-East)
     const windAngleRad = (240 * Math.PI) / 180;
     const vx = Math.cos(windAngleRad);
     const vy = Math.sin(windAngleRad);
@@ -579,8 +644,8 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
     const animateWind = () => {
       ctx.clearRect(0, 0, width, height);
 
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = mapTheme === 'light_analysis' ? 'rgba(30, 41, 59, 0.4)' : 'rgba(0, 231, 179, 0.55)';
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = mapTheme === 'light_analysis' ? 'rgba(15, 23, 42, 0.4)' : 'rgba(0, 231, 179, 0.65)';
       ctx.lineCap = 'round';
 
       particles.forEach((p) => {
@@ -597,9 +662,8 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
         ctx.lineTo(p.x - vx * p.length, p.y - vy * p.length);
         ctx.stroke();
 
-        // Arrowhead
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
         ctx.fillStyle = mapTheme === 'light_analysis' ? '#0f172a' : '#00E7B3';
         ctx.fill();
       });
@@ -614,30 +678,21 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
     };
   }, [showWindVectors, mapTheme]);
 
-  // Timeline Auto-play Loop
-  useEffect(() => {
-    if (!isPlayingTimeline) return;
-    const timer = setInterval(() => {
-      setTimelineIndex((prev) => (prev >= 100 ? 0 : prev + 5));
-    }, 600);
-    return () => clearInterval(timer);
-  }, [isPlayingTimeline]);
-
   return (
     <div className={`relative w-full rounded-3xl border shadow-2xl overflow-hidden transition-all duration-300 ${
-      mapTheme === 'light_analysis' 
-        ? 'bg-[#F5F7F8] border-slate-300 text-slate-900' 
-        : 'bg-[#05070A] border-white/10 text-white'
+      uiMode === 'light'
+        ? 'bg-white/95 border-slate-300 text-slate-900 shadow-slate-300/40'
+        : 'bg-[#05070A] border-white/10 text-white shadow-black/80'
     }`}>
 
       {/* ========================================================= */}
       {/* 1. TOP COMMAND BAR                                        */}
       {/* ========================================================= */}
       <header className={`px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 border-b backdrop-blur-2xl ${
-        mapTheme === 'light_analysis' ? 'bg-white/80 border-slate-200' : 'bg-[#070B14]/90 border-white/10'
+        uiMode === 'light' ? 'bg-white/95 border-slate-200' : 'bg-[#070B14]/90 border-white/10'
       }`}>
         
-        {/* Left: Title, Real GPS Button & Location Badge */}
+        {/* Left: Title & Location Status */}
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#00E7B3] animate-pulse" />
@@ -646,20 +701,14 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
             </span>
           </div>
 
-          {/* Real GPS Sync Button */}
+          {/* Real Location Center Button */}
           <button
-            onClick={fetchUserRealLocation}
-            className={`flex items-center space-x-1.5 px-3 py-1 rounded-full border text-xs font-mono transition-all cursor-pointer ${
-              realLocation.source === 'BROWSER_GPS'
-                ? 'bg-[#00E7B3]/20 border-[#00E7B3]/50 text-[#00E7B3] shadow-md shadow-[#00E7B3]/20'
-                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
-            }`}
-            title="Detect & Center on My Real Physical Coordinates"
+            onClick={resolveRealLocation}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-[#00E7B3]/15 border border-[#00E7B3]/60 text-slate-900 font-mono text-xs font-bold hover:bg-[#00E7B3]/25 transition-all shadow-sm cursor-pointer"
+            title="Recalibrate and Center Directly On My Real Location"
           >
-            <LocateFixed className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin text-[#00B8FF]' : 'text-[#00E7B3]'}`} />
-            <span className="font-bold">
-              {isLocating ? 'Acquiring GPS...' : `GPS: ${realLocation.lat.toFixed(4)}, ${realLocation.lng.toFixed(4)}`}
-            </span>
+            <LocateFixed className={`w-3.5 h-3.5 text-[#00E7B3] ${isLocating ? 'animate-spin' : ''}`} />
+            <span>📍 {realLocation.city} ({realLocation.lat.toFixed(4)}, {realLocation.lng.toFixed(4)})</span>
           </button>
         </div>
 
@@ -670,7 +719,7 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
             value={currentLayer}
             onChange={(e) => onChangeLayer(e.target.value as HeatmapLayerType)}
             className={`px-3 py-1.5 rounded-xl border text-xs font-bold font-mono cursor-pointer focus:outline-none transition-all ${
-              mapTheme === 'light_analysis'
+              uiMode === 'light'
                 ? 'bg-slate-100 border-slate-300 text-slate-900'
                 : 'bg-[#0b101d] border-white/15 text-[#00B8FF]'
             }`}
@@ -685,67 +734,67 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
           </select>
         </div>
 
-        {/* Right: Theme Switcher & 3D Pitch Controls */}
+        {/* Right: Theme Toggle & Basemap Switcher */}
         <div className="flex items-center space-x-2">
           
-          {/* 4 Basemap Themes */}
-          <div className="flex items-center p-1 rounded-xl bg-white/5 border border-white/10 gap-1">
+          {/* Basemap Selection */}
+          <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 gap-1">
             <button
-              onClick={() => setMapTheme('dark_command')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
-                mapTheme === 'dark_command' ? 'bg-[#00B8FF] text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
+              onClick={() => { setMapTheme('satellite_3d'); setUiMode('light'); }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                mapTheme === 'satellite_3d' ? 'bg-[#00B8FF] text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'
               }`}
-              title="Dark Command (#05070A)"
-            >
-              <Moon className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline text-[10px]">Dark</span>
-            </button>
-
-            <button
-              onClick={() => setMapTheme('light_analysis')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
-                mapTheme === 'light_analysis' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-              title="Light Analysis Mode (#F5F7F8)"
-            >
-              <Sun className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline text-[10px]">Light</span>
-            </button>
-
-            <button
-              onClick={() => setMapTheme('satellite_3d')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
-                mapTheme === 'satellite_3d' ? 'bg-[#00B8FF] text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-              title="3D Satellite HD"
             >
               <SatelliteIcon className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline text-[10px]">Satellite</span>
+              <span>3D Satellite</span>
             </button>
 
             <button
-              onClick={() => setMapTheme('topo_3d')}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
-                mapTheme === 'topo_3d' ? 'bg-[#00B8FF] text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
+              onClick={() => { setMapTheme('light_analysis'); setUiMode('light'); }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                mapTheme === 'light_analysis' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-950'
               }`}
-              title="3D Topographic Terrain"
+            >
+              <Sun className="w-3.5 h-3.5" />
+              <span>Light</span>
+            </button>
+
+            <button
+              onClick={() => { setMapTheme('dark_command'); setUiMode('dark'); }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                mapTheme === 'dark_command' ? 'bg-[#00B8FF] text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <Moon className="w-3.5 h-3.5" />
+              <span>Dark</span>
+            </button>
+
+            <button
+              onClick={() => { setMapTheme('topo_3d'); }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                mapTheme === 'topo_3d' ? 'bg-[#00B8FF] text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'
+              }`}
             >
               <Mountain className="w-3.5 h-3.5" />
-              <span className="hidden lg:inline text-[10px]">Topo</span>
+              <span>Topo</span>
             </button>
           </div>
 
           {/* 3D Tilt Slider */}
-          <div className="hidden md:flex items-center space-x-2 px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-xs font-mono">
+          <div className="hidden md:flex items-center space-x-2 px-3 py-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-xs font-mono">
             <Compass className="w-3.5 h-3.5 text-[#00B8FF]" />
-            <span className="text-[10px] text-slate-400">PITCH:</span>
+            <span className="text-[10px] text-slate-500 font-bold">3D TILT:</span>
             <input
               type="range"
               min="0"
               max="70"
               value={pitch}
-              onChange={(e) => handlePitchChange(parseInt(e.target.value))}
-              className="w-16 h-1 bg-white/20 rounded appearance-none cursor-pointer accent-[#00B8FF]"
+              onChange={(e) => {
+                const newPitch = parseInt(e.target.value);
+                setPitch(newPitch);
+                if (mapInstance.current) mapInstance.current.easeTo({ pitch: newPitch, duration: 300 });
+              }}
+              className="w-16 h-1 bg-slate-300 rounded appearance-none cursor-pointer accent-[#00B8FF]"
             />
             <span className="text-[10px] text-[#00B8FF] font-bold">{pitch}°</span>
           </div>
@@ -757,9 +806,9 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
       {/* ========================================================= */}
       {/* 2. MAIN 3D MAP VIEWPORT                                   */}
       {/* ========================================================= */}
-      <div className="relative w-full h-[580px] overflow-hidden bg-[#04060A]">
+      <div className="relative w-full h-[600px] overflow-hidden bg-slate-900">
 
-        {/* MapLibre 3D Canvas Container */}
+        {/* MapLibre Canvas Container */}
         <div ref={mapContainer} className="w-full h-full" />
 
         {/* Layer 1: Continuous IDW Spatial Interpolation Canvas */}
@@ -767,8 +816,8 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
           <canvas
             ref={canvasRef}
             width={1200}
-            height={580}
-            className="absolute inset-0 w-full h-full pointer-events-none mix-blend-screen opacity-75"
+            height={600}
+            className="absolute inset-0 w-full h-full pointer-events-none mix-blend-screen opacity-70"
           />
         )}
 
@@ -777,213 +826,131 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
           <canvas
             ref={windCanvasRef}
             width={1200}
-            height={580}
-            className="absolute inset-0 w-full h-full pointer-events-none opacity-80"
+            height={600}
+            className="absolute inset-0 w-full h-full pointer-events-none opacity-85"
           />
-        )}
-
-        {/* Real User GPS Location Pin */}
-        <div 
-          style={{ top: '50%', left: '50%' }}
-          className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10"
-        >
-          <div className="relative flex flex-col items-center">
-            {/* Accuracy Pulse Ring */}
-            <div className="absolute -inset-4 rounded-full bg-[#00E7B3]/20 animate-ping" />
-            <div className="px-2.5 py-0.5 rounded-full bg-[#070b14]/90 border border-[#00E7B3] text-[9px] font-mono text-[#00E7B3] font-bold shadow-lg flex items-center gap-1 mb-1">
-              <Crosshair className="w-2.5 h-2.5 text-[#00E7B3]" />
-              <span>MY LIVE LOCATION</span>
-            </div>
-            <div className="w-3 h-3 rounded-full bg-[#00E7B3] border-2 border-white shadow-md shadow-[#00E7B3]" />
-          </div>
-        </div>
-
-        {/* Layer A: Physical 3D Infrastructure Sensor Nodes (HTML Overlay) */}
-        {showRawSensors && (
-          <div className="absolute inset-0 pointer-events-none">
-            {physicalSensors.map((node, idx) => {
-              const topPositions = ['35%', '24%', '66%', '28%', '76%'];
-              const leftPositions = ['38%', '65%', '32%', '60%', '76%'];
-
-              return (
-                <div
-                  key={node.id}
-                  style={{ top: topPositions[idx % 5], left: leftPositions[idx % 5] }}
-                  onClick={() => setSelectedNode(node)}
-                  className="absolute pointer-events-auto transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-                >
-                  <div className="relative flex flex-col items-center">
-                    
-                    {/* Live Sensor Value Badge */}
-                    <div className={`px-2.5 py-1 rounded-xl font-mono text-xs font-black shadow-2xl border flex items-center gap-1.5 transition-transform duration-200 group-hover:scale-110 ${
-                      mapTheme === 'light_analysis'
-                        ? 'bg-white text-slate-950 border-slate-300'
-                        : 'bg-[#070b14]/95 text-white border-white/20'
-                    }`}>
-                      <span className={`w-2 h-2 rounded-full ${node.provenance === 'REAL' ? 'bg-[#00E7B3]' : 'bg-[#00B8FF]'}`} />
-                      <span>{node.pm25.toFixed(1)}</span>
-                      <span className="text-[9px] text-slate-400 font-normal">µg/m³</span>
-                    </div>
-
-                    {/* Antenna Mast */}
-                    <div className="w-0.5 h-6 bg-gradient-to-b from-[#00E7B3] to-transparent opacity-80" />
-                    <div className="w-3 h-1 bg-black/60 rounded-full blur-[1px]" />
-
-                    {/* Sensor ID Tag */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -bottom-5 bg-black/90 text-[9px] font-mono text-slate-300 px-2 py-0.5 rounded border border-white/10 whitespace-nowrap">
-                      {node.id} ({node.provenance})
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Layer C: Real 3D VTOL Aircraft Marker */}
-        {showDrone3D && activeDrone && (
-          <div
-            style={{ top: '44%', left: '56%' }}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer"
-            onClick={() => onSelectDrone(activeDrone.id)}
-          >
-            <div className="relative flex flex-col items-center">
-              
-              {/* Drone ID & Elevation Badge */}
-              <div className="px-3 py-1 rounded-full bg-[#00B8FF] text-slate-950 font-mono font-black text-xs shadow-lg shadow-[#00B8FF]/40 border border-white flex items-center gap-1.5 animate-bounce">
-                <Navigation2 className="w-3.5 h-3.5 fill-slate-950" style={{ transform: `rotate(${activeDrone.heading}deg)` }} />
-                <span>{activeDrone.id}</span>
-                <span className="text-[10px] bg-slate-950/20 px-1 rounded">{activeDrone.altitude.toFixed(0)}m</span>
-              </div>
-
-              {/* Plumb Line to Ground */}
-              <div className="w-0.5 h-10 border-l border-dashed border-[#00B8FF] opacity-75" />
-              <div className="w-6 h-2 bg-black/80 rounded-full blur-[2px]" />
-            </div>
-          </div>
         )}
 
         {/* ========================================================= */}
         {/* 3. LAYER TOGGLE PANEL (Floating Top-Right)                */}
         {/* ========================================================= */}
-        <div className={`absolute top-4 right-4 z-20 p-3.5 rounded-2xl border backdrop-blur-xl text-xs space-y-2.5 shadow-2xl ${
-          mapTheme === 'light_analysis' ? 'bg-white/90 border-slate-300 text-slate-900' : 'bg-[#070b14]/90 border-white/10 text-white'
+        <div className={`absolute top-4 right-4 z-20 p-4 rounded-2xl border backdrop-blur-2xl text-xs space-y-2.5 shadow-2xl ${
+          uiMode === 'light' ? 'bg-white/95 border-slate-300 text-slate-900' : 'bg-[#070b14]/95 border-white/10 text-white'
         }`}>
-          <div className="font-heading font-bold text-[11px] uppercase tracking-wider text-slate-400 flex items-center justify-between border-b border-white/10 pb-1.5">
+          <div className="font-heading font-black text-[11px] uppercase tracking-wider text-slate-500 flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-2">
             <span>MAP LAYERS</span>
             <Sliders className="w-3.5 h-3.5 text-[#00B8FF]" />
           </div>
 
-          <div className="space-y-1.5 font-mono text-[11px]">
-            <label className="flex items-center justify-between space-x-3 cursor-pointer">
-              <span>● Raw Sensor Nodes</span>
+          <div className="space-y-2 font-mono text-[11px]">
+            <label className="flex items-center justify-between space-x-4 cursor-pointer">
+              <span className="font-bold">📍 My Real Location Pin</span>
+              <input
+                type="checkbox"
+                checked={showUserLocation}
+                onChange={(e) => setShowUserLocation(e.target.checked)}
+                className="accent-[#00E7B3] rounded w-4 h-4"
+              />
+            </label>
+
+            <label className="flex items-center justify-between space-x-4 cursor-pointer">
+              <span>● Ground Sensor Nodes</span>
               <input
                 type="checkbox"
                 checked={showRawSensors}
                 onChange={(e) => setShowRawSensors(e.target.checked)}
-                className="accent-[#00E7B3] rounded"
+                className="accent-[#00E7B3] rounded w-4 h-4"
               />
             </label>
 
-            <label className="flex items-center justify-between space-x-3 cursor-pointer">
+            <label className="flex items-center justify-between space-x-4 cursor-pointer">
               <span>░░ IDW Interpolation</span>
               <input
                 type="checkbox"
                 checked={showIDWField}
                 onChange={(e) => setShowIDWField(e.target.checked)}
-                className="accent-[#00B8FF] rounded"
+                className="accent-[#00B8FF] rounded w-4 h-4"
               />
             </label>
 
-            <label className="flex items-center justify-between space-x-3 cursor-pointer">
-              <span>◇ Data Confidence Mesh</span>
-              <input
-                type="checkbox"
-                checked={showConfidence}
-                onChange={(e) => setShowConfidence(e.target.checked)}
-                className="accent-amber-400 rounded"
-              />
-            </label>
-
-            <label className="flex items-center justify-between space-x-3 cursor-pointer">
-              <span>→ Animated Wind Field</span>
+            <label className="flex items-center justify-between space-x-4 cursor-pointer">
+              <span>→ Wind Dispersion Vectors</span>
               <input
                 type="checkbox"
                 checked={showWindVectors}
                 onChange={(e) => setShowWindVectors(e.target.checked)}
-                className="accent-[#00E7B3] rounded"
+                className="accent-[#00E7B3] rounded w-4 h-4"
               />
             </label>
 
-            <label className="flex items-center justify-between space-x-3 cursor-pointer">
-              <span>✈ 3D VTOL & Trail</span>
+            <label className="flex items-center justify-between space-x-4 cursor-pointer">
+              <span>✈ 3D VTOL Drone (42m)</span>
               <input
                 type="checkbox"
                 checked={showDrone3D}
                 onChange={(e) => setShowDrone3D(e.target.checked)}
-                className="accent-[#00B8FF] rounded"
+                className="accent-[#00B8FF] rounded w-4 h-4"
               />
             </label>
           </div>
         </div>
 
         {/* ========================================================= */}
-        {/* 4. SENSOR NODE INSPECTOR DRAWER (When clicked)           */}
+        {/* 4. SENSOR NODE INSPECTOR DRAWER                           */}
         {/* ========================================================= */}
         {selectedNode && (
-          <div className={`absolute top-4 left-4 z-30 w-80 p-4 rounded-2xl border backdrop-blur-2xl shadow-2xl space-y-3 ${
-            mapTheme === 'light_analysis' ? 'bg-white/95 border-slate-300 text-slate-900' : 'bg-[#070b14]/95 border-white/15 text-white'
+          <div className={`absolute top-4 left-4 z-30 w-84 p-4 rounded-2xl border backdrop-blur-2xl shadow-2xl space-y-3 ${
+            uiMode === 'light' ? 'bg-white/98 border-slate-300 text-slate-900' : 'bg-[#070b14]/98 border-white/15 text-white'
           }`}>
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-2">
               <div className="flex items-center space-x-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#00E7B3] animate-ping" />
                 <span className="font-heading font-black text-sm">{selectedNode.id}</span>
               </div>
               <button
                 onClick={() => setSelectedNode(null)}
-                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white"
+                className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="text-[11px] text-slate-400">{selectedNode.name}</div>
+            <div className="text-[11px] text-slate-500 font-medium">{selectedNode.name}</div>
 
             {/* Provenance Badge */}
-            <div className="flex items-center justify-between bg-white/5 p-2 rounded-xl border border-white/10 text-xs font-mono">
-              <span className="text-slate-400">DATA PROVENANCE:</span>
-              <span className="px-2 py-0.5 rounded bg-[#00E7B3]/20 text-[#00E7B3] font-bold">
+            <div className="flex items-center justify-between bg-slate-100 dark:bg-white/5 p-2 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-mono">
+              <span className="text-slate-500">PROVENANCE:</span>
+              <span className="px-2 py-0.5 rounded bg-[#00E7B3]/20 text-[#00a87e] dark:text-[#00E7B3] font-black">
                 ● {selectedNode.provenance}
               </span>
             </div>
 
-            {/* Measurements Grid */}
+            {/* Sensor Array Readings */}
             <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <span className="text-[10px] text-slate-400">PM2.5:</span>
-                <div className="text-[#00E7B3] font-bold text-sm">{selectedNode.pm25} µg/m³</div>
+              <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-xl border border-slate-200 dark:border-white/5">
+                <span className="text-[10px] text-slate-500">PM2.5:</span>
+                <div className="text-[#00a87e] dark:text-[#00E7B3] font-bold text-sm">{selectedNode.pm25} µg/m³</div>
               </div>
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <span className="text-[10px] text-slate-400">PM10:</span>
-                <div className="text-white font-bold text-sm">{selectedNode.pm10} µg/m³</div>
+              <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-xl border border-slate-200 dark:border-white/5">
+                <span className="text-[10px] text-slate-500">PM10:</span>
+                <div className="text-slate-900 dark:text-white font-bold text-sm">{selectedNode.pm10} µg/m³</div>
               </div>
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <span className="text-[10px] text-slate-400">CO₂:</span>
-                <div className="text-amber-400 font-bold text-sm">{selectedNode.co2} ppm</div>
+              <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-xl border border-slate-200 dark:border-white/5">
+                <span className="text-[10px] text-slate-500">CO₂:</span>
+                <div className="text-amber-600 dark:text-amber-400 font-bold text-sm">{selectedNode.co2} ppm</div>
               </div>
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <span className="text-[10px] text-slate-400">TEMP:</span>
-                <div className="text-cyan-400 font-bold text-sm">{selectedNode.temperature}°C</div>
+              <div className="bg-slate-100 dark:bg-white/5 p-2 rounded-xl border border-slate-200 dark:border-white/5">
+                <span className="text-[10px] text-slate-500">TEMP:</span>
+                <div className="text-cyan-600 dark:text-cyan-400 font-bold text-sm">{selectedNode.temperature}°C</div>
               </div>
             </div>
 
-            {/* Scientific Confidence & Samples */}
-            <div className="space-y-1 text-[11px] font-mono text-slate-300">
-              <div className="flex justify-between">
-                <span>MEASUREMENT CONFIDENCE:</span>
-                <span className="text-[#00E7B3] font-bold">{selectedNode.confidence}%</span>
+            <div className="space-y-1 text-[11px] font-mono">
+              <div className="flex justify-between text-slate-600 dark:text-slate-300">
+                <span>CONFIDENCE:</span>
+                <span className="text-[#00a87e] dark:text-[#00E7B3] font-bold">{selectedNode.confidence}%</span>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#00E7B3] to-[#00B8FF]"
                   style={{ width: `${selectedNode.confidence}%` }}
@@ -1003,34 +970,32 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
       {/* 5. CONTINUOUS REGULATORY SCALE LEGEND                     */}
       {/* ========================================================= */}
       <div className={`px-5 py-3 border-t flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl ${
-        mapTheme === 'light_analysis' ? 'bg-white/90 border-slate-200' : 'bg-[#070b14]/95 border-white/10'
+        uiMode === 'light' ? 'bg-white/95 border-slate-200' : 'bg-[#070b14]/95 border-white/10'
       }`}>
         
-        {/* Continuous Scale */}
         <div className="flex items-center space-x-3 w-full sm:w-auto">
-          <span className="text-[11px] font-mono font-bold text-slate-400 uppercase">
-            {currentLayer.toUpperCase()} SCALE:
+          <span className="text-[11px] font-mono font-bold text-slate-500 uppercase">
+            {currentLayer.toUpperCase()} CONTINUOUS SCALE:
           </span>
           <div className="flex flex-col space-y-1">
             <div className="w-48 sm:w-64 h-2.5 rounded-full bg-gradient-to-r from-[#00E7B3] via-[#00B8FF] via-[#FFB800] via-[#FF5500] to-[#FF3366] shadow-sm" />
-            <div className="flex justify-between text-[9px] font-mono text-slate-400">
+            <div className="flex justify-between text-[9px] font-mono text-slate-500 font-bold">
               <span>0 Good</span>
               <span>12 Mod</span>
               <span>35 Unhealthy</span>
-              <span>55+ Alert</span>
+              <span>55+ Hazardous</span>
             </div>
           </div>
         </div>
 
-        {/* Provenance Indicators */}
-        <div className="flex items-center space-x-3 text-[11px] font-mono">
-          <span className="flex items-center gap-1 text-[#00E7B3]">
+        <div className="flex items-center space-x-3 text-[11px] font-mono font-bold">
+          <span className="flex items-center gap-1 text-[#00a87e] dark:text-[#00E7B3]">
             ● REAL SENSOR
           </span>
-          <span className="flex items-center gap-1 text-[#00B8FF]">
+          <span className="flex items-center gap-1 text-[#0094cc] dark:text-[#00B8FF]">
             ◇ MODELLED WIND
           </span>
-          <span className="flex items-center gap-1 text-amber-400">
+          <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
             ░░ IDW INTERPOLATION
           </span>
         </div>
@@ -1041,39 +1006,36 @@ export const EnvironmentalTwinMap: React.FC<EnvironmentalTwinProps> = ({
       {/* 6. 4D ENVIRONMENTAL TIMELINE SCRUBBER                     */}
       {/* ========================================================= */}
       <footer className={`px-5 py-3 border-t flex items-center justify-between gap-4 text-xs font-mono backdrop-blur-xl ${
-        mapTheme === 'light_analysis' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-[#060810] border-white/10 text-slate-300'
+        uiMode === 'light' ? 'bg-slate-100 border-slate-200 text-slate-900' : 'bg-[#060810] border-white/10 text-slate-300'
       }`}>
         
-        {/* Play/Pause Button */}
         <button
           onClick={() => setIsPlayingTimeline(!isPlayingTimeline)}
-          className={`p-2 rounded-xl border flex items-center justify-center transition-all ${
-            isPlayingTimeline ? 'bg-[#00B8FF] text-slate-950 border-[#00B8FF]' : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
+          className={`p-2 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
+            isPlayingTimeline ? 'bg-[#00B8FF] text-slate-950 border-[#00B8FF]' : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-900 dark:text-white'
           }`}
         >
           {isPlayingTimeline ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </button>
 
-        {/* Time Slider */}
         <div className="flex-1 flex items-center space-x-3">
-          <span className="text-[10px] text-slate-400">10:00</span>
+          <span className="text-[10px] text-slate-500 font-bold">10:00</span>
           <input
             type="range"
             min="0"
             max="100"
             value={timelineIndex}
             onChange={(e) => setTimelineIndex(parseInt(e.target.value))}
-            className="flex-1 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#00B8FF]"
+            className="flex-1 h-1.5 bg-slate-300 dark:bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#00B8FF]"
           />
-          <span className={`text-[10px] font-bold ${timelineIndex >= 95 ? 'text-[#00E7B3]' : 'text-[#00B8FF]'}`}>
+          <span className={`text-[10px] font-black ${timelineIndex >= 95 ? 'text-[#00a87e] dark:text-[#00E7B3]' : 'text-[#0094cc] dark:text-[#00B8FF]'}`}>
             {timelineIndex >= 95 ? 'LIVE (NOW)' : `T - ${100 - timelineIndex}m`}
           </span>
         </div>
 
-        {/* Reset to Live */}
         <button
-          onClick={() => { setTimelineIndex(100); setIsPlayingTimeline(false); }}
-          className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-mono hover:bg-white/10 flex items-center gap-1.5"
+          onClick={() => { setTimelineIndex(100); setIsPlayingTimeline(false); resolveRealLocation(); }}
+          className="px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-[11px] font-mono hover:bg-slate-50 dark:hover:bg-white/10 flex items-center gap-1.5 cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 text-[#00E7B3]" />
           <span>Sync Live</span>
